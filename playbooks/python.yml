@@ -1,0 +1,6 @@
+---
+- name: "Python"
+  hosts: Staging
+  tasks:
+    - name: "install python 3.8"
+
