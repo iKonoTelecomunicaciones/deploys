@@ -1,9 +1,6 @@
 ---
 - name: "SSH"
-  hosts: Staging
+  hosts: all
+  #become: true
   tasks:
-    - name: "add SSH authorized keys"
-      authorized_key:
-        user: root
-        state: present
-        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+    - include: ../tasks/add-ssh-authorized-keys.yml
