@@ -3,3 +3,7 @@
     user: root
     state: present
     key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+  #   key: "{{ item }}"
+  # with_file:
+  #   - /home/user/.ssh/id_rsa.pub
+  #   - /home/user/.ssh/id_rsa_other.pub
