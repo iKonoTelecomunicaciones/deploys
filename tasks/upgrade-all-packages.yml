@@ -1,5 +1,18 @@
-- name: "upgrade all packages, excluding kernel"
+- name: "Upgrade all packages"
   yum:
     name: '*'
     state: latest
-    exclude: kernel*
+    #exclude: kernel*
+  when: ansible_facts['os_family'] == "RedHat"
+
+# - shell: yum -y update
+#   register: update
+
+# - debug: msg="{{ update.results }}"
+# - debug: msg="{{ update.stdout_lines }}"
+
+# - apt:
+#     name: '*'
+#     state: latest
+#     #exclude: kernel*
+#   when: ansible_facts['os_family'] == "Debian"

@@ -1,6 +1,76 @@
 ---
 - name: "Python"
-  hosts: Staging
+  hosts: all:!B2BUA:!iKonoNagios:!OATRaspberrypi
   tasks:
-    - name: "install python 3.8"
-      
+    - import_tasks: ../tasks/upgrade-all-packages.yml
+
+    - name: "Install required packages"
+      yum:
+        name: "{{ packages }}"
+      vars:
+        packages:
+          - yum-utils
+          - "@Development tools"
+          - pcre
+          - zlib
+          - libffi-devel
+          - nscd
+          #disablerepo: "epel,irontec"
+        state: present
+      register: install
+    
+    #- debug: var=install.results
+
+    - name: "Checking OpenSSL version"
+      shell: openssl version
+      register: openssl_version
+
+    - name: "Download and unarchive OpenSSL sources"
+      unarchive:
+        src: http://www.openssl.org/source/openssl-1.1.1d.tar.gz
+        dest: /usr/local/src/ikono/
+        remote_src: yes
+      when: openssl_version.stdout is not match("OpenSSL 1.1.1d.*")
+
+    - name: "Install OpenSSL from sources"
+      shell: 
+        cmd: |
+          ./Configure linux-x86_64 --prefix=/usr 
+          make && make install
+        chdir: /usr/local/src/ikono/openssl-1.1.1d/
+      register: install_openssl
+      when: openssl_version.stdout is not match("OpenSSL 1.1.1d.*")
+    
+    - debug: 
+      #  msg: "rc ( {{ install_openssl.rc }} ), error ( {{ install_openssl.stdout_lines }} )"
+        msg: The OpenSSL version is ({{ openssl_version.stdout }}).
+      when: install_openssl is skipped
+
+    - name: "Checking python version"
+      shell: if [[ -e /usr/local/bin/python3 ]];then python3 --version; fi
+      register: python_version
+
+    - name: "Download and unarchive python sources"
+      unarchive:
+        src: https://www.python.org/ftp/python/3.8.2/Python-3.8.2.tar.xz
+        dest: /usr/local/src/python/
+        remote_src: yes
+      when: python_version.stdout is not match("Python 3.8.*")
+
+    - name: "Install python from sources"
+      shell: 
+        cmd: |
+          ./configure --enable-optimizations --with-ensurepip=install
+          make -j 2 
+          make altinstall
+          cd /usr/local/bin/
+          ln -s python3.8 python3
+        chdir: /usr/local/src/python/Python-3.8.2
+      register: install_python
+      when: python_version.stdout is not match("Python 3.8.*")
+        
+    - debug: 
+      #  msg: "rc ( {{ install_openssl.rc }} ), error ( {{ install_openssl.stdout_lines }} )"
+        msg: The Python3 version is ({{ python_version.stdout }}).
+      when: install_python is skipped
+  

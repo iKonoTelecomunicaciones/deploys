@@ -1,4 +1,4 @@
 - name: "ping"
   hosts: all
   tasks: 
-    - include: ../tasks/pong.yml
+    - import_tasks: ../tasks/pong.yml

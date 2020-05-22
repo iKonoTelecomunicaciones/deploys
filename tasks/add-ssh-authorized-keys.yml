@@ -1,7 +1,11 @@
+# export ANSIBLE_HOST_KEY_CHECKING=False
+# ansible-playbook deploy_authorized_keys.yml --ask-become-pass --ask-pass --extra-vars='pubkey="<pubkey-for-super-user>”’
+# ansible-playbook playbooks/ssh.yml --ask-pass
+
 - name: "add SSH authorized keys"
   authorized_key:
     user: root
-    state: present
+    state: present # present / absent
     key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
   #   key: "{{ item }}"
   # with_file:
