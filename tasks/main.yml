@@ -1,2 +1,7 @@
 ---
 # tasks file for deploys/
+# - import_tasks: install.debian.yml
+#   when: ansible_os_family == 'Debian'
+
+# - import_tasks: install.redhat.yml
+#   when: ansible_os_family == 'RedHat'

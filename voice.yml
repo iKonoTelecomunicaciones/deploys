@@ -1,0 +1,6 @@
+---
+- name: "iKonoSuite Apps"
+  hosts: Staging
+  roles: 
+    - role: apps
+      when: ansible_facts['os_family'] == 'RedHat'
