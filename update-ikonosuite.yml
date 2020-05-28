@@ -1,0 +1,7 @@
+---
+- name: "Update iKonoSuite"
+  #hosts: all
+  hosts: all:!B2BUA:!CentOS5
+  tasks:
+    - import_tasks: tasks/upgrade-all-packages.yml
+    - import_tasks: tasks/install-packages-required.yml
