@@ -1,0 +1,12 @@
+- name: "Update execs scripts"
+  subversion:
+    repo: http://dev.ikono.com.co/svn/execs/trunk
+    dest: /etc/asterisk/execs
+    username: "{{ username }}"
+    password: "{{ password }}"
+    checkout: no
+    update: yes
+    switch: no
+    force: no
+  when: "'voice' in group_names"
+
