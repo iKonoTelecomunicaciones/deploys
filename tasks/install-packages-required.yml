@@ -41,7 +41,8 @@
   register: install_openssl
   when: openssl_version.stdout is not match("OpenSSL 1.1.1d.*")
 
-- debug: 
+- name: "Debuging OpenSSL version"
+  debug: 
     msg: The OpenSSL version is ({{ openssl_version.stdout }}).
     verbosity: 1
   when: install_openssl is skipped
@@ -69,7 +70,8 @@
   register: install_python
   when: python_version.stdout is not match("Python 3.8.*")
 
-- debug: 
+- name: "Debuging Python version"
+  debug: 
     msg: The Python3 version is ({{ python_version.stdout }}).
     verbosity: 1
   when: install_python is skipped
