@@ -9,16 +9,19 @@
     switch: no
     force: no
 
-- name: "Dump repqueuelog database"
-  mysql_db:
-    state: dump
-    name: repqueuelog
-    target: /tmp/repqueuelog_{{ ansible_date_time.epoch }}.sql
-    encoding: utf8
-    login_host: localhost
-    login_port: 3306
-    login_user: "{{ mysql_username }}"
-    login_password: "{{ mysql_password }}"
+- name: "Dump repqueuelog database" # with routines
+  # mysql_db:
+  #   state: dump
+  #   name: repqueuelog
+  #   target: /tmp/repqueuelog_{{ ansible_date_time.epoch }}.sql
+  #   encoding: utf8
+  #   login_host: localhost
+  #   login_port: 3306
+  #   login_user: "{{ mysql_username }}"
+  #   login_password: "{{ mysql_password }}"
+  shell: mysqldump repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} --routines > /tmp/repqueuelog_{{ ansible_date_time.epoch }}.sql
+  #ignore_errors: True
+  register: dump_repqueuelog
 
 - name: "Copy update_database.sql file"
   copy:
@@ -27,7 +30,7 @@
     
 - name: "Update repqueuelog database"
   shell: mysql repqueuelog -sfu{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} < /tmp/update_database.sql
-  ignore_errors: svn_true
+  ignore_errors: True
   register: update_repqueuelog
 
 - name: "Debuging repqueuelog"
