@@ -1,0 +1,33 @@
+### CM-Queuelog
+
+- name: "Backup cmqueuelog config"
+  synchronize:
+    src: /etc/cmqueuelog/
+    dest: /tmp/cmqueuelog_{{ ansible_date_time.date }}
+  delegate_to: "{{ inventory_hostname }}"
+  register: cmqueuelog_backup
+
+- name: "Update cmqueuelog sources"
+  subversion:
+    repo: http://dev.ikono.com.co/svn/queuelog/trunk
+    dest: /usr/local/src/ikono/queuelog-trunk
+    username: "{{ svn_username }}"
+    password: "{{ svn_password }}"
+    checkout: no
+    update: yes
+    switch: no
+    force: no
+  register: cmqueuelog_update
+
+- name: "Install cmqueuelog from sources"
+  shell: 
+    cmd: |
+      python setup.py install
+      service cmqueuelog restart
+    chdir: /usr/local/src/ikono/queuelog-trunk/
+  when: cmqueuelog_update is changed
+
+- name: "Checking cmqueuelog running"
+  service:
+    name: cmqueuelog
+    state: started

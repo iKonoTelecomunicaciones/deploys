@@ -1,0 +1,10 @@
+- name: "Update execs scripts"
+  subversion:
+    repo: http://dev.ikono.com.co/svn/execs/trunk
+    dest: /etc/asterisk/execs
+    username: "{{ svn_username }}"
+    password: "{{ svn_password }}"
+    checkout: no
+    update: yes
+    switch: no
+    force: no
