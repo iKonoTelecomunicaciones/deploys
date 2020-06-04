@@ -19,6 +19,7 @@
       - zlib
       - libffi-devel
       - nscd
+      - MySQL-python
     state: present
 
 - name: "Checking OpenSSL version"
