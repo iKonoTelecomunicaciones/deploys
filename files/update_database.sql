@@ -57,7 +57,7 @@ CREATE TABLE `jos_cm_role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE jos_cm_role ADD UNIQUE `UQ_cm_role` (`role`);
-INSERT INTO jos_cm_role(role) SELECT DISTINCT role FROM jos_queuelog_call WHERE role IS NOT NULL;
+INSERT IGNORE INTO jos_cm_role(role) SELECT DISTINCT role FROM jos_queuelog_call WHERE role IS NOT NULL;
 
 /* ======================= */
 
@@ -70,7 +70,8 @@ ALTER TABLE jos_agents_agent_shifts ADD CONSTRAINT `fk_agents_shift_rule` FOREIG
 
 /* ======================= */
 
-INSERT INTO jos_cm_oui (mac, organization) values ('00-A2-89', 'Cisco');
-INSERT INTO jos_cm_oui (mac, organization) values ('00-59-DC', 'Cisco');
-INSERT INTO jos_cm_oui (mac, organization) values ('64-16-7F', 'Polycom');
-INSERT INTO jos_cm_oui (mac, organization) values ('C0-74-AD', 'Grandstream Networks, Inc.');
+INSERT IGNORE INTO jos_cm_oui (mac, organization) values ('00-A2-89', 'Cisco');
+INSERT IGNORE INTO jos_cm_oui (mac, organization) values ('00-59-DC', 'Cisco');
+INSERT IGNORE INTO jos_cm_oui (mac, organization) values ('64-16-7F', 'Polycom');
+INSERT IGNORE INTO jos_cm_oui (mac, organization) values ('C0-74-AD', 'Grandstream Networks, Inc.');
+
