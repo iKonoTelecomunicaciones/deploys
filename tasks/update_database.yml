@@ -20,7 +20,6 @@
   #   login_user: "{{ mysql_username }}"
   #   login_password: "{{ mysql_password }}"
   shell: mysqldump repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} --routines > /tmp/repqueuelog_{{ ansible_date_time.epoch }}.sql
-  #ignore_errors: True
   register: dump_repqueuelog
 
 - name: "Copy update_database.sql file"
@@ -29,7 +28,7 @@
     dest: /tmp
     
 - name: "Update repqueuelog database"
-  shell: mysql repqueuelog -sfu{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} < /tmp/update_database.sql
+  shell: mysql repqueuelog -sfu{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} < /tmp/update_database.sql |& tee -a /tmp/update_db.log
   ignore_errors: True
   register: update_repqueuelog
 
