@@ -1,0 +1,36 @@
+- name: "Update database-trunk sources"
+  subversion:
+    repo: http://dev.ikono.com.co/svn/database/trunk
+    dest: /usr/local/src/ikono/database-trunk/
+    username: "{{ svn_username }}"
+    password: "{{ svn_password }}"
+    checkout: no
+    update: yes
+    switch: no
+    force: no
+
+- name: "Dump repqueuelog database"
+  mysql_db:
+    state: dump
+    name: repqueuelog
+    target: /tmp/repqueuelog_{{ ansible_date_time.epoch }}.sql
+    encoding: utf8
+    login_host: localhost
+    login_port: 3306
+    login_user: "{{ mysql_username }}"
+    login_password: "{{ mysql_password }}"
+
+- name: "Copy update_database.sql file"
+  copy:
+    src: update_database.sql
+    dest: /tmp
+    
+- name: "Update repqueuelog database"
+  shell: mysql repqueuelog -sfu{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} < /tmp/update_database.sql
+  ignore_errors: svn_true
+  register: update_repqueuelog
+
+- name: "Debuging repqueuelog"
+  debug: 
+    msg: "{{ update_repqueuelog.stderr_lines }}"
+    #verbosity: 1
