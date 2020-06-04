@@ -1,0 +1,33 @@
+### CM-Recording
+
+- name: "Backup cmrecording config"
+  synchronize:
+    src: /etc/cmrecording/
+    dest: /tmp/cmrecording_{{ ansible_date_time.date }}
+  delegate_to: "{{ inventory_hostname }}"
+  register: cmrecording_backup
+
+- name: "Update cmrecording sources"
+  subversion:
+    repo: http://dev.ikono.com.co/svn/scripts/recoding-info/trunk
+    dest: /usr/local/src/scripts/recording-info-trunk
+    username: "{{ svn_username }}"
+    password: "{{ svn_password }}"
+    checkout: no
+    update: yes
+    switch: no
+    force: no
+  register: cmrecording_update
+
+- name: "Install cmrecording from sources"
+  shell: 
+    cmd: |
+      python setup.py install
+      service cmrecording restart
+    chdir: /usr/local/src/scripts/recording-info-trunk/recording-info/
+  when: cmrecording_update is changed
+
+- name: "Checking cmrecording running"
+  service:
+    name: cmrecording
+    state: started
