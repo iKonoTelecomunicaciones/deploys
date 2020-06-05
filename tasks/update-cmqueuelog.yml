@@ -23,6 +23,8 @@
   shell: 
     cmd: |
       python setup.py install
+      HOST=$(grep -E "host =.*" /tmp/cmqueuelog_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/cmqueuelog.conf | awk '{print $3}' | head -n1)
+      sed -i.$(date +"%s") "s/\(host =\).*/\1 $HOST/g" /etc/cmqueuelog/cmqueuelog.conf
       service cmqueuelog restart
     chdir: /usr/local/src/ikono/queuelog-trunk/
   when: cmqueuelog_update is changed

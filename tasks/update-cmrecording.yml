@@ -23,7 +23,7 @@
   shell: 
     cmd: |
       python setup.py install
-      HOST=$(grep -E "host =.*" /tmp/cmqueuelog_1591*/cmqueuelog.conf | awk '{print $3}' | head -n1)
+      HOST=$(grep -E "host =.*" /tmp/cmrecording_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/cmrecording.conf | awk '{print $3}' | head -n1)
       sed -i.$(date +"%s") "s/\(host =\).*/\1 $HOST/g" /etc/cmrecording/cmrecording.conf
       service cmrecording restart
     chdir: /usr/local/src/scripts/recording-info-trunk/recording-info/
