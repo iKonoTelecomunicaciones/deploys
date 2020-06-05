@@ -3,9 +3,22 @@
   #hosts: all
   hosts: all:!B2BUA:!CentOS5
   tasks:
-    #- import_tasks: tasks/update-all-packages.yml
-    #- import_tasks: tasks/install-packages-required.yml
-    - import_tasks: tasks/prepare-server-to-update.yml
+  
+    - import_tasks: tasks/update-all-packages.yml
+    - import_tasks: tasks/install-packages-required.yml
+
+    - import_tasks: tasks/update-database.yml
+      when: "'apps' in group_names"
+    
+    - import_tasks: tasks/update-execs.yml
       when: "'voice' in group_names"
+    
+    - import_tasks: tasks/update-cmqueuelog.yml
+      when: "'voice' in group_names"
+    
+    - import_tasks: tasks/update-cmrecording.yml
+      when: "'voice' in group_names"
+  
   vars_files: 
     - vars/subversion.yml
+    - vars/mysql.yml
