@@ -3,7 +3,7 @@
 - name: "Backup cmqueuelog config"
   synchronize:
     src: /etc/cmqueuelog/
-    dest: /tmp/cmqueuelog_{{ ansible_date_time.date }}
+    dest: /tmp/cmqueuelog_{{ ansible_date_time.epoch }}
   delegate_to: "{{ inventory_hostname }}"
   register: cmqueuelog_backup
 
