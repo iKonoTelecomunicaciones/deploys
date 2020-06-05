@@ -3,7 +3,7 @@
 - name: "Backup cmrecording config"
   synchronize:
     src: /etc/cmrecording/
-    dest: /tmp/cmrecording_{{ ansible_date_time.date }}
+    dest: /tmp/cmrecording_{{ ansible_date_time.epoch }}
   delegate_to: "{{ inventory_hostname }}"
   register: cmrecording_backup
 
@@ -25,9 +25,38 @@
       python setup.py install
       service cmrecording restart
     chdir: /usr/local/src/scripts/recording-info-trunk/recording-info/
+  register: cmrecording_install
   when: cmrecording_update is changed
 
 - name: "Checking cmrecording running"
   service:
     name: cmrecording
     state: started
+
+- name: "Waiting new recording log"
+  shell:
+    cmd: |
+      ENDLINE=$(tail -n1 recording)
+      TIMEOUT={{ timeout }}
+      while [[ $(tail -n1 recording) == $ENDLINE && $TIMEOUT != 0 ]]; do
+        sleep 1
+        TIMEOUT=$(( TIMEOUT - 1 ))
+      done
+      NEWLINE=$(tail -n1 recording)
+      if [[ $TIMEOUT != 0 ]]; then
+        echo "￼Ready!" 
+        echo $ENDLINE | cut -d'|' -f11
+        echo $NEWLINE | cut -d'|' -f11
+      else
+        >&2 echo "FAILED: Timeout and is the same line."
+      fi
+    chdir: /var/log/asterisk/
+  register: recording_log
+  vars: 
+    timeout: 600 # 600 seconds, 10 min
+  failed_when: recording_log.stderr != ""
+  when: cmrecording_install is changed
+
+- name: "Debug new recording"
+  debug:
+    msg: "{{ recording_log.stdout_lines }}"
