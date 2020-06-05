@@ -23,6 +23,8 @@
   shell: 
     cmd: |
       python setup.py install
+      HOST=$(grep -E "host =.*" /tmp/cmqueuelog_1591*/cmqueuelog.conf | awk '{print $3}' | head -n1)
+      sed -i.$(date +"%s") "s/\(host =\).*/\1 $HOST/g" /etc/cmrecording/cmrecording.conf
       service cmrecording restart
     chdir: /usr/local/src/scripts/recording-info-trunk/recording-info/
   register: cmrecording_install
@@ -60,3 +62,4 @@
 - name: "Debug new recording"
   debug:
     msg: "{{ recording_log.stdout_lines }}"
+  when: cmrecording_install is changed
