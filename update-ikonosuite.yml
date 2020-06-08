@@ -19,6 +19,12 @@
     - import_tasks: tasks/update-cmrecording.yml
       when: "'voice' in group_names"
   
+    - import_tasks: tasks/update-monitor-recording.yml
+      when: "'voice' in group_names"
+
+    - import_tasks: tasks/update-monitor-args-agi.yml
+      when: "'voice' in group_names"
+
   vars_files: 
     - vars/subversion.yml
     - vars/mysql.yml
