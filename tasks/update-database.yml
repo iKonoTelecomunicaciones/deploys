@@ -28,12 +28,11 @@
     dest: /tmp
     
 - name: "Update repqueuelog database"
-  shell: mysql repqueuelog -sfu{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} < /tmp/update_database.sql
-  #shell: mysql repqueuelog -sfu{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} < /tmp/update_database.sql |& tee -a /tmp/update_db.log
+  shell: mysql repqueuelog -sfu{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} < /tmp/update_database.sql |& tee -a /tmp/update_db_{{ ansible_date_time.epoch }}.log
   ignore_errors: True
   register: update_repqueuelog
 
 - name: "Debuging repqueuelog"
   debug: 
-    msg: "{{ update_repqueuelog.stderr_lines }}"
+    msg: "{{ update_repqueuelog.stdout_lines }}"
     #verbosity: 1
