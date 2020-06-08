@@ -38,13 +38,13 @@
 - name: "Waiting new recording log"
   shell:
     cmd: |
-      ENDLINE=$(tail -n1 recording)
+      ENDLINE=$(tail -n1 $PWD/recording)
       TIMEOUT={{ timeout }}
-      while [[ $(tail -n1 recording) == $ENDLINE && $TIMEOUT != 0 ]]; do
+      while [[ $(tail -n1 $PWD/recording) == $ENDLINE && $TIMEOUT != 0 ]]; do
         sleep 1
         TIMEOUT=$(( TIMEOUT - 1 ))
       done
-      NEWLINE=$(tail -n1 recording)
+      NEWLINE=$(tail -n1 $PWD/recording)
       if [[ $TIMEOUT != 0 ]]; then
         echo "￼Ready!" 
         echo $ENDLINE | cut -d'|' -f11
