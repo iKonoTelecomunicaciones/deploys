@@ -1,0 +1,12 @@
+### Monitor args AGI
+
+- name: "Update monitor-args AGI"
+  subversion:
+    repo: http://dev.ikono.com.co/svn/agis/agi_monitor-args/trunk
+    dest: /usr/local/src/agis/agi-monitor-args-trunk
+    username: "{{ svn_username }}"
+    password: "{{ svn_password }}"
+    checkout: no
+    update: yes
+    switch: no
+    force: no
