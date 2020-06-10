@@ -35,6 +35,17 @@
     name: cmrecording
     state: started
 
+- name: "Update monitor-recording-trunk scripts"
+  subversion:
+    repo: http://dev.ikono.com.co/svn/scripts/ogg-monitor/centos6/trunk
+    dest: /usr/local/src/scripts/monitor-recording-trunk
+    username: "{{ svn_username }}"
+    password: "{{ svn_password }}"
+    checkout: no
+    update: yes
+    switch: no
+    force: no
+
 - name: "Waiting new recording log"
   shell:
     cmd: |
