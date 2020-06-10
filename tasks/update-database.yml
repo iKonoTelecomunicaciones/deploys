@@ -7,18 +7,9 @@
     checkout: no
     update: yes
     switch: no
-    force: no
+    force: yes
 
 - name: "Dump repqueuelog database" # with routines
-  # mysql_db:
-  #   state: dump
-  #   name: repqueuelog
-  #   target: /tmp/repqueuelog_{{ ansible_date_time.epoch }}.sql
-  #   encoding: utf8
-  #   login_host: localhost
-  #   login_port: 3306
-  #   login_user: "{{ mysql_username }}"
-  #   login_password: "{{ mysql_password }}"
   shell: mysqldump repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} --routines > /tmp/repqueuelog_{{ ansible_date_time.epoch }}.sql
   register: dump_repqueuelog
 
@@ -32,7 +23,11 @@
   ignore_errors: True
   register: update_repqueuelog
 
+- name: "Validate repqueuelog database updated"
+  shell: mysql repqueuelog -sfu{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} -e "SELECT column_name FROM information_schema.columns WHERE table_schema='repqueuelog' AND table_name='jos_queuelog_recordings' AND column_name='tags';"
+  register: validate_repqueuelog
+  failed_when: validate_repqueuelog.stdout != "tags"
+
 - name: "Debuging repqueuelog"
   debug: 
     msg: "{{ update_repqueuelog.stdout_lines }}"
-    #verbosity: 1
