@@ -1,22 +1,23 @@
 iKono Deployments
 =========
 
-A brief description of the role goes here.
+iKonoSuite platform deployment, updates and maintenance.
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+[Docs » Installation Guide » Installing Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 
-Role Variables
---------------
+### Control node requirements
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+Currently Ansible can be run from any machine with Python 2 (version 2.7) or Python 3 (versions 3.5 and higher) installed. This includes Red Hat, Debian, CentOS, macOS, any of the BSDs, and so on. Windows is not supported for the control node.
 
-Dependencies
-------------
+When choosing a control node, bear in mind that any management system benefits from being run near the machines being managed. If you are running Ansible in a cloud, consider running it from a machine inside that cloud. In most cases this will work better than on the open Internet.
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+### Managed node requirements
+
+On the managed nodes, you need a way to communicate, which is normally SSH. By default this uses SFTP. If that’s not available, you can switch to SCP in ansible.cfg. You also need Python 2 (version 2.6 or later) or Python 3 (version 3.5 or later).
+
 
 Example Playbook
 ----------------
@@ -35,4 +36,4 @@ MIT
 Author Information
 ------------------
 
-iKono Telecomunicaciones S.A.S. | www.ikono.co
+jzapataikono from iKono Telecomunicaciones S.A.S. | www.ikono.co
