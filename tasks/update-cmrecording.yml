@@ -74,3 +74,14 @@
   debug:
     msg: "{{ recording_log.stdout_lines }}"
   when: cmrecording_install is changed
+
+- name: "Validate cmrecording updated"
+  shell:
+    cmd: |
+      if [[ -e /usr/local/lib/python2.7/site-packages/recording/ ]]; then
+        grep "if self.with_tags and tags:" /usr/local/lib/python2.7/site-packages/recording/db.py
+      elif [[ -e /usr/lib/python2.7/site-packages/recording/ ]]; then
+        grep "if self.with_tags and tags:" /usr/lib/python2.7/site-packages/recording/db.py
+      fi
+  register: cmrecording_version
+  failed_when: cmrecording_version.stdout == ""
