@@ -3,4 +3,4 @@
   hosts: all
   #become: true
   tasks:
-    - include: ../tasks/add-ssh-authorized-keys.yml
+    - include: tasks/add-ssh-authorized-keys.yml
