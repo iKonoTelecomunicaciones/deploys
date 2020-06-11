@@ -33,3 +33,14 @@
   service:
     name: cmqueuelog
     state: started
+
+- name: "Validate cmqueuelog updated"
+  shell: 
+    cmd: |
+      if [[ -e /usr/local/lib/python2.7/site-packages/queuelog/ ]]; then
+        grep "# if total_tally > 0:" /usr/local/lib/python2.7/site-packages/queuelog/db.py
+      elif [[ -e /usr/lib/python2.7/site-packages/queuelog/ ]]; then
+        grep "# if total_tally > 0:" /usr/lib/python2.7/site-packages/queuelog/db.py
+      fi
+  register: cmqueuelog_version
+  failed_when: cmqueuelog_version.stdout == ""
