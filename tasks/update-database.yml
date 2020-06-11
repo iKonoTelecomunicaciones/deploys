@@ -7,7 +7,7 @@
     checkout: no
     update: yes
     switch: no
-    force: yes
+    force: no # yes, for revert
 
 - name: "Dump repqueuelog database" # with routines
   shell: mysqldump repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} --routines > /tmp/repqueuelog_{{ ansible_date_time.epoch }}.sql
