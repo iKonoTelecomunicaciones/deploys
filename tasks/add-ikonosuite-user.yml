@@ -1,4 +1,4 @@
-- name: "Add the user iKonoSuite"
+- name: "Add the iKonoSuite user"
   user:
     name: ikono
     comment: iKonoSuite
