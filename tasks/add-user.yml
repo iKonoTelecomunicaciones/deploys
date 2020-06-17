@@ -1,0 +1,22 @@
+- name: "Add the user iKonoSuite"
+  user:
+    name: ikono
+    comment: iKonoSuite
+    shell: /bin/bash
+    groups: root,wheel
+    append: yes
+    generate_ssh_key: yes
+    ssh_key_bits: 4096
+    ssh_key_file: .ssh/id_rsa
+    expires: -1
+    # state: absent
+    # remove: yes
+
+- name: "Config and validate the sudoers file"
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    insertafter: '^# %wheel'
+    line: 'ikono           ALL=(ALL:ALL)   NOPASSWD: ALL'
+    validate: /usr/sbin/visudo -cf %s
+    backup: yes
