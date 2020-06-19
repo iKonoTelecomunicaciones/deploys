@@ -20,6 +20,7 @@
       - libffi-devel
       - nscd
       - MySQL-python
+      - nginx
     state: present
 
 - name: "Checking OpenSSL version"
