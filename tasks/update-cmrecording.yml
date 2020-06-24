@@ -13,7 +13,7 @@
     dest: /usr/local/src/scripts/recording-info-trunk
     username: "{{ svn_username }}"
     password: "{{ svn_password }}"
-    checkout: no
+    checkout: yes
     update: yes
     switch: no
     force: no
@@ -25,6 +25,9 @@
       python setup.py install
       HOST=$(grep -E "host =.*" /tmp/cmrecording_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/cmrecording.conf | awk '{print $3}' | head -n1)
       sed -i.$(date +"%s") "s/\(host =\).*/\1 $HOST/g" /etc/cmrecording/cmrecording.conf
+      cd /usr/local/src/scripts
+      unlink recording-info
+      ln -s recording-info-trunk recording-info
       service cmrecording restart
     chdir: /usr/local/src/scripts/recording-info-trunk/recording-info/
   register: cmrecording_install
@@ -41,10 +44,19 @@
     dest: /usr/local/src/scripts/monitor-recording-trunk
     username: "{{ svn_username }}"
     password: "{{ svn_password }}"
-    checkout: no
+    checkout: yes
     update: yes
     switch: no
-    force: no
+    force: yes
+  register: monitor_recording_trunk_update
+
+- name: "Config monitor-recording-trunk"
+  shell:
+    cmd: |
+      unlink monitor-recording
+      ln -s monitor-recording-trunk monitor-recording
+    chdir: /usr/local/src/scripts
+  when: monitor_recording_trunk_update is changed
 
 - name: "Waiting new recording log"
   shell:
