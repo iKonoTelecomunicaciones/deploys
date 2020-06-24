@@ -1,0 +1,27 @@
+- name: "chmod in /var/lib/asterisk/moh/"
+  file:
+    path: /var/lib/asterisk/moh
+    state: directory
+    recurse: yes
+    mode: g+w
+
+- name: "chmod in /var/lib/asterisk/sounds/custom/"
+  file:
+    path: /var/lib/asterisk/sounds/custom
+    state: directory
+    recurse: yes
+    mode: g+w
+
+- name: "chmod in /etc/asterisk/"
+  file:
+    path: /etc/asterisk/
+    state: directory
+    recurse: yes
+    mode: g+w
+
+- name: "chmod in /tftpboot/"
+  file:
+    path: /tftpboot/
+    state: directory
+    recurse: yes
+    mode: g+w
