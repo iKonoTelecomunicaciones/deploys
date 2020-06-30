@@ -1,5 +1,9 @@
 ### CM-Recording
 
+## NOTE: Verify local changes in nodes
+# ansible Staging,\&voice -m shell -a "ls -l /usr/local/src/scripts/monitor-recording /usr/local/src/scripts/recording-info"
+# ansible Staging,\&voice -m shell -a "svn diff /usr/local/src/scripts/recording-info-trunk /usr/local/src/scripts/monitor-recording-trunk"
+
 - name: "Backup cmrecording config"
   synchronize:
     src: /etc/cmrecording/
