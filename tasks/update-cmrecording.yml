@@ -97,3 +97,4 @@
       fi
   register: cmrecording_version
   failed_when: cmrecording_version.stdout == ""
+  changed_when: False
