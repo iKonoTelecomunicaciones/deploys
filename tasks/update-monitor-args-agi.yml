@@ -2,7 +2,7 @@
 
 - name: "Backup monitor-args config"
   synchronize:
-    src: /usr/local/src/agis/agi-monitor-args-trunk
+    src: /usr/local/src/agis/agi-monitor-args-trunk/
     dest: /tmp/monitor-args_{{ ansible_date_time.epoch }}
   delegate_to: "{{ inventory_hostname }}"
 
@@ -17,7 +17,7 @@
     switch: no
     force: yes
 
-- name: "Config and validate monitor-args.py script updated"
+- name: "Config monitor-args.py script updated"
   shell:
     cmd: |
       HOST=$(grep -E "_HOST'][ ]*=[ ]*['\"]" /tmp/monitor-args_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/monitor-args.py | cut -d'=' -f2 | sed "s/[ '\"]//g" | head -n1)
@@ -25,10 +25,11 @@
       USE_CTI=$(grep -E "USE_CTI'][ ]*=[ ]*" /tmp/monitor-args_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/monitor-args.py | grep -Eio "True|False")
       sed -i.$(date +"%s") "
       s#/usr/bin/env python#$(which python)#g
-      s/172.17.3.199/${HOST}/g
+      s/\(_HOST'][ ]*=[ ]*['\"]\).*/\1${HOST}'/g
       s/\(USE_TALLY'][ ]*=[ ]*\).*/\1${USE_TALLY}/g
       s/\(USE_CTI'][ ]*=[ ]*\).*/\1${USE_CTI}/g
       " monitor-args.py
+      grep $HOST monitor-args.py
     chdir: /usr/local/src/agis/agi-monitor-args-trunk
-  register: monitor-args_log
+  register: monitor_args_log
   #failed_when: monitor-args_log.stdout != ""
