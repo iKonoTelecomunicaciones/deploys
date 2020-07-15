@@ -32,4 +32,4 @@
       grep $HOST monitor-args.py
     chdir: /usr/local/src/agis/agi-monitor-args-trunk
   register: monitor_args_log
-  #failed_when: monitor-args_log.stdout == ""
+  failed_when: monitor-args_log.stdout == ""
