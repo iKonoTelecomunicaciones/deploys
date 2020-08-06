@@ -1,42 +1,32 @@
 ---
 - name: "Update iKonoSuite"
-  #hosts: all
-  #hosts: all:!B2BUA:!CentOS5
-
-  ### Update OS and Install packages required... excepciones
-  #hosts: all:!B2BUA:!CentOS5:!MarketingPersonal:!MillanAsociados:!RapidoOchoa:!Surtiplas:!TecnodieselPasto
-  
-  ### CMqueuelog... exepciones
-  hosts: all:!B2BUA:!CentOS5:!MarketingPersonal:!MillanAsociados:!RapidoOchoa:!Surtiplas:!TecnodieselPasto:!METGroup
-
-  tasks:
-
-    ## - import_tasks: tasks/update-all-packages.yml
-
-    ## - import_tasks: tasks/install-packages-required.yml
-
-    ## - import_tasks: tasks/update-database.yml
-    ##   when: "'apps' in group_names"
-    
-    ## - import_tasks: tasks/update-execs.yml
-    ##   when: "'voice' in group_names"
-    
-    ## - import_tasks: tasks/update-cmqueuelog.yml
-    ##   when: "'voice' in group_names"
-
-    ### Here we go!. 
-
-    - import_tasks: tasks/update-cmrecording.yml
-      when: "'voice' in group_names"
-  
-    # - import_tasks: tasks/update-monitor-args-agi.yml
-    #   when: "'voice' in group_names"
-
-    ## - import_tasks: tasks/add-ikonosuite-user.yml
-
-    ## - import_tasks: tasks/dirs-setup.yml
-    ##   when: "'voice' in group_names"
-
+  hosts: all:!B2BUA:!CentOS5:!Migrated:!MarketingPersonal:!MillanAsociados:!Surtiplas:!TecnodieselPasto:!METGroup
   vars_files: 
     - vars/subversion.yml
     - vars/mysql.yml
+    - vars/ikono.yml
+  tasks:
+
+    # - import_tasks: tasks/update-all-packages.yml
+
+    # - import_tasks: tasks/install-packages-required.yml
+
+    # - import_tasks: tasks/update-database.yml
+    #   when: "'apps' in group_names"
+    
+    # - import_tasks: tasks/update-execs.yml
+    #   when: "'voice' in group_names"
+    
+    # - import_tasks: tasks/update-cmqueuelog.yml
+    #   when: "'voice' in group_names"
+
+    ## NOTE: Verify local changes in nodes
+    # - import_tasks: tasks/update-cmrecording.yml
+    #  when: "'voice' in group_names"
+
+    # - import_tasks: tasks/add-ikonosuite-user.yml
+
+    # - import_tasks: tasks/dirs-setup.yml
+    #   when: "'voice' in group_names"
+
+    ### Here we go!. 
