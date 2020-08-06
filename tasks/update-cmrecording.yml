@@ -82,7 +82,7 @@
 #     force: no
 #   register: cmrecording_update
 
-- name: "Update and Install cmrecording from sources"
+- name: "Update and Install cmrecording and AGI monitor-args from sources"
   shell: 
     cmd: |      
       # Actualizar el cmrecording
@@ -189,7 +189,7 @@
     cmd: |
       echo -e "\n>> Esperando nuevo registro...\n";
       cd /var/log/asterisk/
-      # tail -f /var/log/asterisk/recording # Validar que entren llamadas
+      # tail -f /var/log/asterisk/recording 
       ENDLINE=$(tail -n1 $PWD/recording);
       TIMEOUT={{ timeout }}
       echo "$TIMEOUT: $ENDLINE";
@@ -205,22 +205,7 @@
         echo $NEWLINE | cut -d'|' -f11;
       else
         >&2 echo -e "\nFAILED: Timeout and is the same line.";
-      fi
-
-      ENDLINE=$(tail -n1 $PWD/recording)
-      while [[ $(tail -n1 $PWD/recording) == $ENDLINE && $TIMEOUT != 0 ]]; do
-        sleep 1
-        TIMEOUT=$(( TIMEOUT - 1 ))
-        printf "$TIMEOUT, ";
-      done
-      NEWLINE=$(tail -n1 $PWD/recording)
-      if [[ $TIMEOUT != 0 ]]; then
-        echo "￼Ready!" 
-        echo $ENDLINE | cut -d'|' -f11
-        echo $NEWLINE | cut -d'|' -f11
-      else
-        >&2 echo "FAILED: Timeout and is the same line."
-      fi
+      fi     
     chdir: /var/log/asterisk/
   register: recording_log
   vars: 
