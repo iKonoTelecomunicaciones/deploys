@@ -11,65 +11,207 @@
   delegate_to: "{{ inventory_hostname }}"
   register: cmrecording_backup
 
-- name: "Update cmrecording sources"
-  subversion:
-    repo: http://dev.ikono.com.co/svn/scripts/recoding-info/trunk
-    dest: /usr/local/src/scripts/recording-info-trunk
-    username: "{{ svn_username }}"
-    password: "{{ svn_password }}"
-    checkout: yes
-    update: yes
-    switch: no
-    force: no
-  register: cmrecording_update
+# - name: "Update cmrecording sources"
+#   subversion:
+#     repo: http://dev.ikono.com.co/svn/scripts/recoding-info/trunk
+#     dest: /usr/local/src/scripts/recording-info-trunk
+#     username: "{{ svn_username }}"
+#     password: "{{ svn_password }}"
+#     checkout: yes
+#     update: yes
+#     switch: no
+#     force: no
+#   register: cmrecording_update
 
-- name: "Install cmrecording from sources"
-  shell: 
+- name: "Update monitor-recording-trunk and extensions core"
+  shell:
     cmd: |
-      python setup.py install
-      HOST=$(grep -E "host =.*" /tmp/cmrecording_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/cmrecording.conf | awk '{print $3}' | head -n1)
-      sed -i.$(date +"%s") "s/\(host =\).*/\1 $HOST/g" /etc/cmrecording/cmrecording.conf
-      cd /usr/local/src/scripts
-      unlink recording-info
-      ln -s recording-info-trunk recording-info
-      service cmrecording restart
-    chdir: /usr/local/src/scripts/recording-info-trunk/recording-info/
+      # Monitor-recording
+      echo -e "\n>> update monitor-recording trunk\n";
+      if [[ -e /usr/local/src/scripts/monitor-recording-trunk/ ]]; then
+        cd /usr/local/src/scripts/monitor-recording-trunk/;
+        if [[ $(svn st * | grep -v "?") == "" ]]; then
+          svn sw --username {{ svn_username }} --password {{ svn_password }} http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/;
+          svn info | grep -iE "url|rev";
+        else
+          echo -e "\nHay cambios en /usr/local/src/scripts/monitor-recording-trunk/";
+          svn st /usr/local/src/scripts/monitor-recording-trunk/;
+          exit 1;
+        fi
+      else
+        cd /usr/local/src/scripts/;
+        svn co --username {{ svn_username }} --password {{ svn_password }} http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/ monitor-recording-trunk/;
+        unlink monitor-recording && ln -s monitor-recording-trunk/ monitor-recording;
+        ls -l monitor-recording;
+      fi
+      
+      # Actualizar el plan de marcación 2.11
+      echo -e "\n>> update extentions 2.11\n";
+      if ! [ $(grep "SEND_STARTCALL_EVENT=True" /etc/asterisk/custom/autentication/globals.conf) ]; then 
+        echo "SEND_STARTCALL_EVENT=True" >> /etc/asterisk/custom/autentication/globals.conf; 
+      fi
+      cd /etc/asterisk;
+      grep "SEND_STARTCALL_EVENT=True" custom/autentication/globals.conf;
+      svn co --username {{ svn_username }} --password {{ svn_password }} http://dev.ikono.com.co/svn/configuracion/extensions/core/tags/2.11 extensions-2.11;
+      unlink extensions && ln -s extensions-2.11/ extensions;
+      ls -l extensions;
+
+      cd /etc/asterisk
+      sed -i "
+      s/^\(monitor-type=\).*/\1MixMonitor/g
+      s/;\(monitor-format=\).*/\1alaw\n;monitor-format=gsm|wav|wav49/g
+      " queues.conf
+
+      sed -i "
+      s/^\(monitor-type=\).*/\1MixMonitor/g
+      " queue_templates.conf
+
+      asterisk -rx "module reload app_queue.so"
+      asterisk -rx "dialplan reload"
+    chdir: /usr/local/src/scripts/monitor-recording-trunk
+
+# - name: "Update cmrecording sources"
+#   subversion:
+#     repo: http://dev.ikono.com.co/svn/scripts/recoding-info/trunk
+#     dest: /usr/local/src/scripts/recording-info-trunk
+#     username: "{{ svn_username }}"
+#     password: "{{ svn_password }}"
+#     checkout: yes
+#     update: yes
+#     switch: no
+#     force: no
+#   register: cmrecording_update
+
+- name: "Update and Install cmrecording from sources"
+  shell: 
+    cmd: |      
+      # Actualizar el cmrecording
+      echo -e "\n>> update cmrecording\n";
+      if [ -e /usr/local/src/scripts/recording-info-trunk ]; then
+        cd /usr/local/src/scripts/recording-info-trunk;
+        if [[ $(svn st * | grep -v "?") == "" ]]; then
+          svn update --username {{ svn_username }} --password {{ svn_password }};
+          svn info | grep -iE "url|rev";
+        else
+          echo -e "\nHay cambios en /usr/local/src/scripts/recording-info-trunk";
+          svn st /usr/local/src/scripts/recording-info-trunk;
+          exit 1;
+        fi
+      else
+        cd /usr/local/src/scripts/
+        svn co --username {{ svn_username }} --password {{ svn_password }} http://dev.ikono.com.co/svn/scripts/recoding-info/trunk recording-info-trunk/
+        unlink recording-info && ln -s recording-info-trunk/ recording-info
+        ls -l recording-info
+        cd /usr/local/src/scripts/recording-info-trunk
+      fi
+
+      if [[ $(svn info . | grep URL) != "URL: http://dev.ikono.com.co/svn/scripts/recoding-info/trunk" ]]; then 
+        echo -e "\nEl recording no esta en el trunk: $(svn info | grep URL)"; 
+        exit 1;
+      fi
+      if [[ $(grep TAGS * -r | wc -l) != 2 ]]; then
+        echo -e "\nValidar tags en /usr/local/src/scripts/recording-info-trunk";
+        exit 1;
+      fi
+
+      grep TAGS * -r && echo;
+      cd recording-info;
+      python setup.py install;
+      echo -e "\n";
+      HOST=$(grep -E "host =.*" /tmp/cmrecording_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/cmrecording.conf | awk '{print $3}' | head -n1);
+      WEB_HOST=$(grep -E "HOST=.*" /tmp/cmrecording_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/monitor-recording.conf | cut -d'=' -f2 | head -n1);
+      sed -i.$(date +"%s") "s/\(host =\).*/\1 $HOST/g" /etc/cmrecording/cmrecording.conf;
+      sed -i.$(date +"%s") "s/\(HOST=\).*/\1$WEB_HOST/g" /etc/cmrecording/monitor-recording.conf ;
+      grep -i host /etc/cmrecording/cmrecording.conf /etc/cmrecording/monitor-recording.conf;
+      service cmrecording restart;
+      
+      echo -e "\n>> check running cmrecording\n";
+      if [[ $(service cmrecording status | grep running) ]]; then
+        echo "Ok:   $(service cmrecording status)";
+      else
+        echo "Warning: cmrecording no esta corriendo!!";
+      fi
+
+      if [[ -e /usr/local/lib/python2.7/site-packages/recording/ ]]; then
+        if [[ $(grep "if self.with_tags and tags:" /usr/local/lib/python2.7/site-packages/recording/db.py) == "" ]]; then
+          echo -e "\nValidar actualizacion del cmrecording"
+          exit 1;
+        fi
+      elif [[ -e /usr/lib/python2.7/site-packages/recording/ ]]; then
+        if [[ $(grep "if self.with_tags and tags:" /usr/lib/python2.7/site-packages/recording/db.py) == "" ]]; then
+          echo -e "\nValidar actualizacion del cmrecording"
+          exit 1;
+        fi
+      fi
+
+      # Actualizar la AGI monitor-args
+      echo -e "\n>> update agi monitor args\n";
+      rsync -avph /usr/local/src/agis/agi-monitor-args-trunk/ /tmp/monitor-args_$(date +"%s")
+
+      if [ -e /usr/local/src/agis/agi-monitor-args-trunk ]; then
+        cd /usr/local/src/agis/agi-monitor-args-trunk;
+        if [[ $(svn st * | grep -v "?") == "" ]]; then
+          svn update --username {{ svn_username }} --password {{ svn_password }};
+          svn info | grep -iE "url|rev";
+        else
+          echo -e "\nHay cambios en /usr/local/src/agis/agi-monitor-args-trunk";
+          svn diff /usr/local/src/agis/agi-monitor-args-trunk | tee -a /tmp/agi-monitor-args-trunk_diff.log;
+          svn revert monitor-args.py;
+          svn update --username {{ svn_username }} --password {{ svn_password }};
+          svn info | grep -iE "url|rev";
+        fi
+      else
+        echo -e "\nNo existe o no esta en el trunk";
+      fi
+      
+      HOST=$(grep -E "_HOST'][ ]*=[ ]*['\"]" /tmp/monitor-args_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/monitor-args.py | cut -d'=' -f2 | sed "s/[ '\"]//g" | head -n1)
+      USE_TALLY=$(grep -E "USE_TALLY'][ ]*=[ ]*" /tmp/monitor-args_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/monitor-args.py | grep -Eio "True|False" | uniq | head -n1)
+      USE_CTI=$(grep -E "USE_CTI'][ ]*=[ ]*" /tmp/monitor-args_[0-9][0-9][0-9][0-9][0-9][0-9][0-9]*/monitor-args.py | grep -Eio "True|False" | uniq | head -n1)
+      sed -i.$(date +"%s") "
+      s#/usr/bin/env python#$(which python)#g
+      s/\(_HOST'][ ]*=[ ]*['\"]\).*/\1${HOST}'/g
+      s/\(USE_TALLY'][ ]*=[ ]*\).*/\1${USE_TALLY}/g
+      s/\(USE_CTI'][ ]*=[ ]*\).*/\1${USE_CTI}/g
+      " monitor-args.py
+      grep -E "$HOST|python" monitor-args.py
+      asterisk -rx "dialplan reload";
+    chdir: /usr/local/src/scripts/recording-info-trunk
   register: cmrecording_install
-  when: cmrecording_update is changed
+  #when: cmrecording_update is changed
 
 - name: "Checking cmrecording running"
   service:
     name: cmrecording
     state: started
 
-- name: "Update monitor-recording-trunk scripts"
-  subversion:
-    repo: http://dev.ikono.com.co/svn/scripts/ogg-monitor/centos6/trunk
-    dest: /usr/local/src/scripts/monitor-recording-trunk
-    username: "{{ svn_username }}"
-    password: "{{ svn_password }}"
-    checkout: yes
-    update: yes
-    switch: no
-    force: yes
-  register: monitor_recording_trunk_update
-
-- name: "Config monitor-recording-trunk"
-  shell:
-    cmd: |
-      unlink monitor-recording
-      ln -s monitor-recording-trunk monitor-recording
-    chdir: /usr/local/src/scripts
-  when: monitor_recording_trunk_update is changed
-
 - name: "Waiting new recording log"
   shell:
     cmd: |
-      ENDLINE=$(tail -n1 $PWD/recording)
+      echo -e "\n>> Esperando nuevo registro...\n";
+      cd /var/log/asterisk/
+      # tail -f /var/log/asterisk/recording # Validar que entren llamadas
+      ENDLINE=$(tail -n1 $PWD/recording);
       TIMEOUT={{ timeout }}
+      echo "$TIMEOUT: $ENDLINE";
+      while [[ $(tail -n1 $PWD/recording) == $ENDLINE && $TIMEOUT != 0 ]]; do
+        sleep 1;
+        TIMEOUT=$(( TIMEOUT - 1 ));
+        printf "$TIMEOUT, ";
+      done
+      NEWLINE=$(tail -n1 $PWD/recording)
+      if [[ $TIMEOUT != 0 ]]; then
+        echo "￼Ready!";
+        echo $ENDLINE | cut -d'|' -f11;
+        echo $NEWLINE | cut -d'|' -f11;
+      else
+        >&2 echo -e "\nFAILED: Timeout and is the same line.";
+      fi
+
+      ENDLINE=$(tail -n1 $PWD/recording)
       while [[ $(tail -n1 $PWD/recording) == $ENDLINE && $TIMEOUT != 0 ]]; do
         sleep 1
         TIMEOUT=$(( TIMEOUT - 1 ))
+        printf "$TIMEOUT, ";
       done
       NEWLINE=$(tail -n1 $PWD/recording)
       if [[ $TIMEOUT != 0 ]]; then
@@ -82,23 +224,23 @@
     chdir: /var/log/asterisk/
   register: recording_log
   vars: 
-    timeout: 600 # 600 seconds, 10 min
+    timeout: 1800 # 1800 seconds, 30 min
   failed_when: recording_log.stderr != ""
-  when: cmrecording_install is changed
+  #when: cmrecording_install is changed
 
 - name: "Debug new recording"
   debug:
     msg: "{{ recording_log.stdout_lines }}"
-  when: cmrecording_install is changed
+  #when: cmrecording_install is changed
 
-- name: "Validate cmrecording updated"
-  shell:
-    cmd: |
-      if [[ -e /usr/local/lib/python2.7/site-packages/recording/ ]]; then
-        grep "if self.with_tags and tags:" /usr/local/lib/python2.7/site-packages/recording/db.py
-      elif [[ -e /usr/lib/python2.7/site-packages/recording/ ]]; then
-        grep "if self.with_tags and tags:" /usr/lib/python2.7/site-packages/recording/db.py
-      fi
-  register: cmrecording_version
-  failed_when: cmrecording_version.stdout == ""
-  changed_when: False
+# - name: "Validate cmrecording updated"
+#   shell:
+#     cmd: |
+#       if [[ -e /usr/local/lib/python2.7/site-packages/recording/ ]]; then
+#         grep "if self.with_tags and tags:" /usr/local/lib/python2.7/site-packages/recording/db.py
+#       elif [[ -e /usr/lib/python2.7/site-packages/recording/ ]]; then
+#         grep "if self.with_tags and tags:" /usr/lib/python2.7/site-packages/recording/db.py
+#       fi
+#   register: cmrecording_version
+#   failed_when: cmrecording_version.stdout == ""
+#   changed_when: False
