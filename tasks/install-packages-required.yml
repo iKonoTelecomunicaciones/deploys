@@ -21,6 +21,7 @@
       - nscd
       - MySQL-python
       - nginx
+      - sshpass
     state: present
 
 - name: "Checking OpenSSL version"
