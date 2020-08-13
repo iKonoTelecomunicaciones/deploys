@@ -9,14 +9,43 @@
     ssh_key_bits: 4096
     ssh_key_file: .ssh/id_rsa
     expires: -1
-    # state: absent
-    # remove: yes
+    password: "$6$FaJMWYYeqNYu6k0X$AgjwIzgnZS2cmxStXzCnjRXxMCpDg/BXj8zhQ6Z7j64VX7dmq0liVMVyA1rz7wpWiT5Tn8T3EWa3bvBRK0GTc."
 
-- name: "Config and validate the sudoers file"
+- name: "Config sudoers file for ikono: nopass"
   lineinfile:
-    path: /etc/sudoers
+    path: /etc/sudoers.d/ikono
     state: present
-    insertafter: '^# %wheel'
-    line: 'ikono           ALL=(ALL:ALL)   NOPASSWD: ALL'
+    line: 'ikono  ALL=(ALL:ALL)  NOPASSWD: ALL'
     validate: /usr/sbin/visudo -cf %s
     backup: yes
+    create: yes
+
+- name: "Config sudoers file for ikono: requieretty"
+  lineinfile:
+    path: /etc/sudoers.d/ikono
+    state: present
+    line: 'Defaults:ikono !requiretty'
+    validate: /usr/sbin/visudo -cf %s
+    backup: yes
+    create: yes
+  when: "'voice' in group_names"
+
+- name: "Copy SSH-key to voice server"
+  shell: 
+    cmd: |
+      HOST=$(grep -i host /etc/cmgateway/cmservers.ini | awk '{print $2}')
+      PORT=$(mysql -s repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} -e "select substring(substring(params from position('ssh_port=' in params)+length('ssh_port=')) from 1 for position('\n' in substring(params from position('ssh_port=' in params)+length('ssh_port=')))-1) as port from jos_components where \`option\`='com_agents';" | grep -v port)
+      SSH_KEY=$(cat /home/ikono/.ssh/id_rsa.pub)
+      AUTH_KEYS=$(sshpass -p {{ ikono_password }} ssh -p ${PORT} -o StrictHostKeyChecking=no ikono@${HOST} "grep '${SSH_KEY}' .ssh/authorized_keys")
+      if [[ ! ${AUTH_KEYS} ]]; then 
+        if [[ $(lsb_release -sr) < 7 ]]; then
+          sshpass -p {{ ikono_password }} ssh-copy-id -i /home/ikono/.ssh/id_rsa "-p ${PORT} ikono@${HOST} -o StrictHostKeyChecking=no"
+        else
+          sshpass -p {{ ikono_password }} ssh-copy-id -i /home/ikono/.ssh/id_rsa -p ${PORT} ikono@${HOST} -o StrictHostKeyChecking=no
+        fi
+      else
+        echo "OK"
+      fi
+  register: add_key
+  changed_when: add_key.stdout != 'OK'
+  when: "'apps' in group_names"
