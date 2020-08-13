@@ -4,6 +4,7 @@
     state: directory
     recurse: yes
     mode: g+w
+    group: root
 
 - name: "chmod in /var/lib/asterisk/sounds/custom/"
   file:
@@ -11,6 +12,7 @@
     state: directory
     recurse: yes
     mode: g+w
+    group: root
 
 - name: "chmod in /etc/asterisk/"
   file:
@@ -18,6 +20,7 @@
     state: directory
     recurse: yes
     mode: g+w
+    group: root
 
 - name: "chmod in /tftpboot/"
   file:
@@ -25,3 +28,4 @@
     state: directory
     recurse: yes
     mode: g+w
+    group: root
