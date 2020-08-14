@@ -8,7 +8,7 @@
     gpgcheck: no
     state: present
 
-- name: "Install packages from repositories with YUM"
+- name: "Install packages from YUM repositories"
   yum:
     name: "{{ packages }}"
   vars:
@@ -23,6 +23,19 @@
       - nginx
       - sshpass
     state: present
+
+- name: "Install php-mysql package from YUM repositories"
+  shell: 
+    cmd: |
+      if [ ! $(rpm -qa | grep php-mysqlnd) ]; then
+        yum -y remove php-mysql
+        yum -y install php-mysqlnd
+      else
+        echo "OK"
+      fi
+  register: install_php_mysql
+  changed_when: install_php_mysql.stdout != "OK"
+  when: ansible_distribution_major_version > "6"
 
 - name: "Checking OpenSSL version"
   shell: openssl version
@@ -64,16 +77,18 @@
 - name: "Install python from sources"
   shell: 
     cmd: |
-      # make clean && make distclean
+      make clean && make distclean
+      yum install -y centos-release-scl devtoolset-9-gcc* 
+      source scl_source enable devtoolset-9
       ./configure --enable-optimizations --with-ensurepip=install
       make -j 2
       make altinstall
       cd /usr/local/bin/
       ln -s python3.8 python3
-      python -c "print ('hello world')"
+      python3.8 -c "print ('hello world')"
     chdir: /usr/local/src/python/Python-3.8.3/
   register: install_python
-  failed_when: install_python.stdount != "hello world"
+  failed_when: install_python.stdout != "hello world"
   when: python_version.stdout is not match("Python 3.8.*")
 
 - name: "Debuging Python version"
@@ -82,9 +97,73 @@
     verbosity: 1
   when: install_python is skipped
 
-- name: "Install pip3.8 packages"
+- name: "Upgrade pip3.8 package manager"
   shell:
     cmd: | 
-      python3.8 -m pip install --upgrade pip
-      pip3.8 install wheel
-      pip3.8 install setuptools
+      PIP38=$(pip3.8 list --outdated | grep pip | awk '{print $2}')
+      if [[ $(pip3.8 list --outdated | grep pip | awk '{print $3}') > $PIP38 ]]; then
+        python3.8 -m pip install --upgrade pip
+      else
+        echo "OK"
+      fi
+  register: upgrade_pip38
+  changed_when: upgrade_pip38.stdout != "OK"
+      
+- name: "Install pip3.8 packages"
+  pip:
+    name: "{{ pip_packages }}"
+    executable: pip3.8
+    state: present
+  vars: 
+    pip_packages:
+      - wheel
+      - setuptools
+
+- name: "Install virtualenvwrapper"
+  shell: 
+    cmd: |
+      if [[ ! $(updatedb && locate virtualenvwrapper) ]]; then
+        pip3.8 install virtualenvwrapper
+      else
+        echo "OK"
+      fi
+  register: install_virtualenvwrapper
+  changed_when: install_virtualenvwrapper.stdout != "OK"
+
+- name: "Install supervisor"
+  shell: 
+    cmd: |
+      if [[ ! $(updatedb && locate supervisord) ]]; then
+        if [[ $(lsb_release -sr) < 7 ]]; then
+          pip3.8 install supervisor
+          cd /usr/local/bin/
+          echo_supervisord_conf > /etc/supervisord.conf
+          mkdir /var/run/supervisor/ /var/log/supervisor /etc/supervisord.d
+          # Configuracion 
+        else
+          yum -y install supervisor
+        fi
+      else
+        echo "OK"
+      fi
+  register: install_supervisor
+  changed_when: install_supervisor.stdout != "OK"
+
+- name: "Install ffmpeg"
+  shell: 
+    cmd: |
+      if [[ ! $(rpm -qa | grep ffmpeg) ]]; then
+        rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
+        if [[ $(lsb_release -sr) < 7 ]]; then
+          rpm -Uvh http://li.nux.ro/download/nux/dextop/el6/x86_64/nux-dextop-release-0-2.el6.nux.noarch.rpm
+        else
+          rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm     
+        fi
+        yum -y install ffmpeg ffmpeg-devel
+        sed -i.$(date +"%s") "s/enabled=1/enabled=0/g" /etc/yum.repos.d/nux-dextop.repo
+        ffmpeg -version
+      else
+        echo "OK"
+      fi
+  register: install_ffmpeg
+  changed_when: install_ffmpeg.stdout != "OK"
