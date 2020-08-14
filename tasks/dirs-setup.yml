@@ -1,31 +1,12 @@
-- name: "chmod in /var/lib/asterisk/moh/"
+- name: "chmod in asterisk directories"
   file:
-    path: /var/lib/asterisk/moh
+    path: "{{ item }}"
     state: directory
     recurse: yes
     mode: g+w
     group: root
-
-- name: "chmod in /var/lib/asterisk/sounds/custom/"
-  file:
-    path: /var/lib/asterisk/sounds/custom
-    state: directory
-    recurse: yes
-    mode: g+w
-    group: root
-
-- name: "chmod in /etc/asterisk/"
-  file:
-    path: /etc/asterisk/
-    state: directory
-    recurse: yes
-    mode: g+w
-    group: root
-
-- name: "chmod in /tftpboot/"
-  file:
-    path: /tftpboot/
-    state: directory
-    recurse: yes
-    mode: g+w
-    group: root
+  loop: 
+    - /var/lib/asterisk/moh
+    - /var/lib/asterisk/sounds/custom
+    - /etc/asterisk/
+    - /tftpboot/
