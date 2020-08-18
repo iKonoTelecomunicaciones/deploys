@@ -77,9 +77,9 @@
 - name: "Install python from sources"
   shell: 
     cmd: |
-      make clean && make distclean
-      yum install -y centos-release-scl devtoolset-9-gcc* 
-      source scl_source enable devtoolset-9
+      #make clean && make distclean
+      #yum install -y centos-release-scl devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gdb-plugin devtoolset-9-gcc-gfortran devtoolset-9-gcc-plugin-devel
+      #source scl_source enable devtoolset-9
       ./configure --enable-optimizations --with-ensurepip=install
       make -j 2
       make altinstall
@@ -139,7 +139,14 @@
           cd /usr/local/bin/
           echo_supervisord_conf > /etc/supervisord.conf
           mkdir /var/run/supervisor/ /var/log/supervisor /etc/supervisord.d
-          # Configuracion 
+          sed -i.$(date +"%s") "
+          s#^file=.*#file=/var/run/supervisor/supervisor.sock#g
+          s#^logfile=.*#logfile=/var/log/supervisor/supervisord.log#g
+          s#^pidfile=.*#pidfile=/var/run/supervisord.pid#g
+          s#^serverurl=.*#serverurl=unix:///var/run/supervisor/supervisor.sock#g
+          s#^;\[include#\[include#g
+          s#^;files =.*#files = supervisord.d/*.ini#g
+          " /etc/supervisord.conf
         else
           yum -y install supervisor
         fi
