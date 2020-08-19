@@ -1,0 +1,35 @@
+- name: "Create directory for iKonoSuite"
+  file:
+    path: "~/.web"
+    state: directory
+
+- name: "Download provisiones API"
+  subversion:
+    repo: http://dev.ikono.com.co/svn/provisioner_api/trunk
+    dest: /home/ikono/web/provisioner_api
+    username: "{{ svn_username }}"
+    password: "{{ svn_password }}"
+    checkout: yes
+    update: yes
+    switch: no
+    force: no
+
+- name: "Config subversion"
+  lineinfile:
+    path: "~/.subversion/servers"
+    regexp: '^# store-passwords'
+    line: "store-passwords = no"
+
+- name: "Clone backend proyect" 
+  git: 
+    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/ikono_suite_backend.git"
+    dest: /home/ikono/web/ikono_suite_backend
+    clone: yes
+    update: no
+
+- name: "Clone frontend proyect" 
+  git: 
+    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/build_ikono_suite_frontend.git"
+    dest: /home/ikono/web/build_ikono_suite_frontend
+    clone: yes
+    update: no
