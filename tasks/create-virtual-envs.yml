@@ -1,0 +1,24 @@
+- name: "Create virtualenv directory for iKono"
+  file:
+    path: "~/.envs"
+    state: directory
+
+- name: "Configure virtualenv bashrc file "
+  blockinfile:
+    path: "~/.bashrc"
+    block: |
+      export WORKON_HOME=~/.envs
+      export VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python3.8
+      source /usr/local/bin/virtualenvwrapper.sh
+
+- name: "Create virtualenv for iKonoSuite"
+  shell:
+    cmd: |
+      source ~/.bashrc
+      if [[ ! -e ~/.envs/ikono_suite/ ]]; then 
+        mkvirtualenv ikono_suite --python=/usr/local/bin/python3.8
+      else
+        echo "OK"
+      fi
+  register: create_virtualenv_ikonosuite
+  changed_when: create_virtualenv_ikonosuite.stdout != "OK"
