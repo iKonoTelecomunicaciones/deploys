@@ -1,15 +1,20 @@
 ---
 - name: "Update iKonoSuite"
-  hosts: all:!B2BUA:!CentOS5:!Migrated:!MarketingPersonal:!MillanAsociados:!Surtiplas:!TecnodieselPasto:!METGroup
+  hosts: all:!B2BUA:!CentOS5:!Migrated:!Skipped
   vars_files: 
     - vars/subversion.yml
     - vars/mysql.yml
     - vars/ikono.yml
+  # gather_facts: no
+  # become: yes
+  # become_method: su
+  # become_user: ikono
   tasks:
 
     # - import_tasks: tasks/update-all-packages.yml
 
     # - import_tasks: tasks/install-packages-required.yml
+    #   when: "'apps' in group_names"
 
     # - import_tasks: tasks/update-database.yml
     #   when: "'apps' in group_names"
@@ -22,11 +27,14 @@
 
     ## NOTE: Verify local changes in nodes
     # - import_tasks: tasks/update-cmrecording.yml
-    #  when: "'voice' in group_names"
+    #   when: "'voice' in group_names"
 
     # - import_tasks: tasks/add-ikonosuite-user.yml
 
     # - import_tasks: tasks/dirs-setup.yml
     #   when: "'voice' in group_names"
-
+    
     ### Here we go!. 
+
+    # - import_tasks: tasks/config-services.yml
+    #   when: "'apps' in group_names"
