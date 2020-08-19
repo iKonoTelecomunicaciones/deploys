@@ -22,6 +22,7 @@
       - MySQL-python
       - nginx
       - sshpass
+      - jq
     state: present
 
 - name: "Install php-mysql package from YUM repositories"
