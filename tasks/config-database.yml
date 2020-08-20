@@ -1,0 +1,34 @@
+- name: "Dump repqueuelog database" # with routines
+  shell:
+    cmd: |
+      cd /home/ikono/
+      if [[ ! $(find -name "repqueuelog_*.sql" -mmin -30) || ! $(grep -i "completed" $(find -name "repqueuelog_*.sql" -mmin -30)) ]]; then
+        mysqldump repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} --routines > /home/ikono/repqueuelog_{{ ansible_date_time.epoch }}.sql
+      else
+        echo "OK"
+      fi
+  register: dump_repqueuelog
+  changed_when: dump_repqueuelog.stdout != "OK"
+
+- name: "Create user for ikono in database"
+  shell:
+    cmd: |
+      cd /home/ikono/
+      if [[ ! $(mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} -e "select user,host from mysql.user;" | grep ikono) ]]; then
+        mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "GRANT ALL PRIVILEGES ON repqueuelog.* TO ikono@localhost IDENTIFIED BY 'onokimysql';"
+      else
+        echo "OK"
+      fi
+  register: create_user_database
+  changed_when: create_user_database.stdout != "OK"
+
+- name: "Config django base.py file"
+  shell:
+    cmd: |
+      if [[ $(grep "datetime(6)" /home/ikono/.envs/ikono_suite/lib/python3.8/site-packages/django/db/backends/mysql/base.py ) ]]; then
+        sed -i "s/datetime(6)/datetime/g" /home/ikono/.envs/ikono_suite/lib/python3.8/site-packages/django/db/backends/mysql/base.py
+      else
+        echo "OK"
+      fi
+  register: config_django_base_file
+  changed_when: config_django_base_file.stdout != "OK"
