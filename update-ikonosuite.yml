@@ -5,10 +5,7 @@
     - vars/subversion.yml
     - vars/mysql.yml
     - vars/ikono.yml
-  # gather_facts: no
-  # become: yes
-  # become_method: su
-  # become_user: ikono
+    - vars/gitlab.yml
   tasks:
 
     # - import_tasks: tasks/update-all-packages.yml
@@ -34,6 +31,31 @@
     # - import_tasks: tasks/dirs-setup.yml
     #   when: "'voice' in group_names"
     
+    # - import_tasks: tasks/create-virtual-envs.yml
+    #   become: yes
+    #   become_method: su
+    #   become_user: ikono
+    #   when: "'apps' in group_names"
+
+    # # Install Web
+
+    # - import_tasks: tasks/install-web.yml
+    #   become: yes
+    #   become_method: su
+    #   become_user: ikono
+    #   when: "'apps' in group_names"
+
+    # Config Database
+
+    # - import_tasks: tasks/config-database.yml
+    #   when: "'apps' in group_names"
+
+    # - import_tasks: tasks/migrations-django.yml
+    #   become: yes
+    #   become_method: su
+    #   become_user: ikono
+    #   when: "'apps' in group_names"
+
     ### Here we go!. 
 
     # - import_tasks: tasks/config-services.yml
