@@ -1,6 +1,6 @@
 - name: "Create directory for iKonoSuite"
   file:
-    path: "~/.web"
+    path: "~/web"
     state: directory
 
 - name: "Download provisiones API"
@@ -90,19 +90,48 @@
     virtualenv: ~/.envs/ikono_suite/
     state: present
 
-- name: "Create config files for django"
+- name: "Create config files for backend django"
   shell:
     cmd: |
       cd ~/web/ikono_suite_backend
       if [[ ! -e ikono_suite/local_settings.py && ! -e ikono_suite/monitoring_settings.py ]]; then
-        rsync -avph ikono_suite/local_settings.py.template ikono_suite/local_settings.py
-        rsync -avph ikono_suite/monitoring_settings.py.template ikono_suite/monitoring_settings.py
+        cp -v ikono_suite/local_settings.py.template ikono_suite/local_settings.py
+        cp -v ikono_suite/monitoring_settings.py.template ikono_suite/monitoring_settings.py
       elif [[ ! -e ikono_suite/local_settings.py ]]; then
-        rsync -avph ikono_suite/local_settings.py.template ikono_suite/local_settings.py
+        cp -v ikono_suite/local_settings.py.template ikono_suite/local_settings.py
       elif [[ ! -e ikono_suite/monitoring_settings.py ]]; then
-        rsync -avph ikono_suite/monitoring_settings.py.template ikono_suite/monitoring_settings.py
+        cp -v ikono_suite/monitoring_settings.py.template ikono_suite/monitoring_settings.py
       else
         echo "OK"
       fi
-  register: config_files_django
-  changed_when: config_files_django.stdout != "OK"
+  register: config_backend_files_django
+  changed_when: config_backend_files_django.stdout != "OK"
+
+- name: "Create config files for frontend django"
+  shell:
+    cmd: |
+      cd ~/web/build_ikono_suite_frontend/assets/config/
+      if [[ ! -e config.deploy.json ]]; then
+        cp -v config.json.template config.deploy.json
+      else
+        echo "OK"
+      fi
+  register: config_frontend_files_django
+  changed_when: config_frontend_files_django.stdout != "OK"
+
+- name: "Dir for client logotype image"
+  file:
+    path: "~/web/build_ikono_suite_frontend/assets/img/client"
+    state: directory
+
+- name: "Copy client logotype image"
+  shell:
+    cmd: |
+      cd ~/web/build_ikono_suite_frontend/assets/img/client
+      if [[ -e /var/www/html/cmweb/images/customer_logo.png && ! -e customer_logo.png ]]; then
+        cp -pv /var/www/html/cmweb/images/customer_logo.png .
+      else
+        echo "OK"
+      fi
+  register: copy_file_logotype
+  changed_when: copy_file_logotype.stdout != "OK"
