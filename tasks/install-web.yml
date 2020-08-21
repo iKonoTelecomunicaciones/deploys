@@ -27,13 +27,6 @@
     clone: yes
     update: no
 
-- name: "Clone frontend proyect" 
-  git: 
-    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/build_ikono_suite_frontend.git"
-    dest: /home/ikono/web/build_ikono_suite_frontend
-    clone: yes
-    update: no
-
 - name: "Config git for backend"
   shell:
     cmd: |
@@ -44,6 +37,13 @@
       fi
   register: config_git_backend
   changed_when: config_git_backend.stdout != "OK"
+
+- name: "Clone frontend proyect" 
+  git: 
+    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/build_ikono_suite_frontend.git"
+    dest: /home/ikono/web/build_ikono_suite_frontend
+    clone: yes
+    update: no
 
 - name: "Config git for frontend"
   shell:
