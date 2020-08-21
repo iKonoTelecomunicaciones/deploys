@@ -2,8 +2,10 @@
   service: 
     name: nginx
     enabled: yes
+    state: started
 
 - name: "Enable Supervisor"
   service: 
     name: supervisord
     enabled: yes
+    state: started
