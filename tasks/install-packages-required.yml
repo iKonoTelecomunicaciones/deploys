@@ -18,11 +18,14 @@
       - pcre
       - zlib
       - libffi-devel
+      - libffi 
       - nscd
       - MySQL-python
       - nginx
       - sshpass
       - jq
+      - python-setuptools 
+      - git
     state: present
 
 - name: "Install php-mysql package from YUM repositories"
