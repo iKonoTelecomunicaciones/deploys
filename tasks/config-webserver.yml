@@ -1,0 +1,80 @@
+- name: "Upgrade pip package manager for ikono_suite virtualenv"
+  become: yes
+  become_method: su
+  become_user: ikono
+  shell:
+    cmd: | 
+      source ~/.envs/ikono_suite/bin/activate
+      PIPVER=$(pip list --outdated | grep pip | awk '{print $2}')
+      if [[ $(pip list --outdated | grep pip | awk '{print $3}') > $PIPVER ]]; then
+        python -m pip install --upgrade pip
+      else
+        echo "OK"
+      fi
+  register: upgrade_pip
+  changed_when: upgrade_pip.stdout != "OK"
+
+- name: "Pip install uwsgi for webserver"
+  become: yes
+  become_method: su
+  become_user: ikono
+  pip:
+    name: uwsgi
+    virtualenv: ~/.envs/ikono_suite/
+    state: present
+
+- name: "Config default port for nginx"
+  shell:
+    cmd: | 
+      if [[ $(lsb_release -sr) < 7 ]]; then
+        if [[ ! $(grep "80 " /etc/nginx/conf.d/default.conf | grep "^#") ]]; then
+          sed -i.$(date +"%s") "s/^/#/g" /etc/nginx/conf.d/default.conf
+          sed -i.$(date +"%s") "s/user nginx/user ikono/g" /etc/nginx/nginx.conf
+        else
+          echo "OK"
+        fi
+      else
+        if [[ $(grep "80 default_server" /etc/nginx/nginx.conf) ]]; then
+          sed -i.$(date +"%s") "
+          s/80 default_server/8000/g
+          s/user nginx/user ikono/g
+          " /etc/nginx/nginx.conf
+        else
+          echo "OK"
+        fi
+      fi
+  register: config_default_nginx
+  changed_when: config_default_nginx.stdout != "OK"
+
+- name: "Copy config file for nginx backend"
+  copy:
+    src: files/nginx_ikono_suite.conf
+    dest: /etc/nginx/conf.d/ikono_suite.conf
+    force: no
+
+- name: "Copy config file for nginx frontend"
+  copy:
+    src: files/nginx_frontend.conf
+    dest: /etc/nginx/conf.d/frontend.conf
+    force: no
+
+- name: "Chown /var/lib nginx dir"
+  file:
+    path: /var/lib/nginx/
+    state: directory
+    recurse: yes
+    group: ikono
+    owner: ikono
+
+- name: "Copy config ikono_suite file for supervisor"
+  copy:
+    src: files/supervisord_ikono_suite.ini
+    dest: /etc/supervisord.d/ikono_suite.ini
+    force: no
+
+- name: "Copy config service file for supervisord"
+  copy:
+    src: files/supervisord_init_service
+    dest: /etc/init.d/supervisord
+    force: no
+    mode: u=rwx,g=rx,o=rx
