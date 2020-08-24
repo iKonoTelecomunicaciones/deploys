@@ -3,7 +3,7 @@
     path: "~/web"
     state: directory
 
-- name: "Download provisiones API"
+- name: "Download provisioner API"
   subversion:
     repo: http://dev.ikono.com.co/svn/provisioner_api/trunk
     dest: /home/ikono/web/provisioner_api
