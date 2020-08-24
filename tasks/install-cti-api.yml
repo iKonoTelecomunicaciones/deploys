@@ -1,0 +1,120 @@
+- name: "Install packages from YUM repositories"
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - libffi 
+      - libffi-devel
+      - python-setuptools 
+      - git
+    state: present
+
+- name: "Create virtualenv directory for cti-api"
+  file:
+    path: "~/.envs"
+    state: directory
+
+- name: "Configure virtualenv bashrc file"
+  blockinfile:
+    path: "/root/.bashrc"
+    block: |
+      export WORKON_HOME=~/.envs
+      export VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python3.8
+      source /usr/local/bin/virtualenvwrapper.sh
+
+- name: "Clone cti-api proyect" 
+  git: 
+    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/cti-api.git"
+    dest: /usr/local/src/ikono/cti-api
+    clone: yes
+    update: no
+
+- name: "Config git for cti-api"
+  shell:
+    cmd: |
+      if [[ $( grep {{ git_password }} /usr/local/src/ikono/cti-api/.git/config ) ]]; then 
+        sed -i "s/:{{ git_password }}//g" /usr/local/src/ikono/cti-api/.git/config
+      else
+        echo "OK"
+      fi
+  register: config_git_cti_api
+  changed_when: config_git_cti_api.stdout != "OK"
+
+- name: "Create virtualenv for cti-api"
+  shell:
+    cmd: |
+      source /root/.bashrc
+      if [[ ! -e /root/.envs/cti-api/ ]]; then 
+        mkvirtualenv cti-api --python=/usr/local/bin/python3.8
+      else
+        echo "OK"
+      fi
+  register: create_virtualenv_cti_api
+  changed_when: create_virtualenv_cti_api.stdout != "OK"
+
+- name: "Upgrade pip package manager for cti-api virtualenv"
+  shell:
+    cmd: | 
+      source /root/.envs/cti-api/bin/activate
+      PIPVER=$(pip list --outdated | grep pip | awk '{print $2}')
+      if [[ $(pip list --outdated | grep pip | awk '{print $3}') > $PIPVER ]]; then
+        python -m pip install --upgrade pip
+      else
+        echo "OK"
+      fi
+  register: upgrade_pip
+  changed_when: upgrade_pip.stdout != "OK"
+
+- name: "Pip install requests for cti-api"
+  pip:
+    name: requests
+    virtualenv: /root/.envs/cti-api/
+    state: present
+
+- name: "Pip install twisted for cti-api"
+  pip:
+    name: https://github.com/twisted/twisted/archive/twisted-20.3.0.zip
+    virtualenv: /root/.envs/cti-api/
+    state: present
+
+- name: "Pip install requeriments.txt for cti-api virtualenv"
+  pip:
+    requirements: /usr/local/src/ikono/cti-api/requirements.txt
+    virtualenv: /root/.envs/cti-api/
+    state: present
+
+- name: "Copy config cti-api file for supervisor"
+  copy:
+    src: files/supervisord_cti_api.ini
+    dest: /etc/supervisord.d/cti_api.ini
+    force: no
+
+- name: "Create logs dir for cti-api"
+  file:
+    path: /usr/local/src/ikono/cti-api/logs
+    state: directory
+
+- name: "Create logs files for cti-api"
+  file:
+    path: "{{ item }}"
+    state: touch
+  loop: 
+    - /usr/local/src/ikono/cti-api/logs/supervisor_out.log
+    - /usr/local/src/ikono/cti-api/logs/supervisor_err.log
+
+- name: "Create config files for cti-api"
+  shell:
+    cmd: |
+      cd /usr/local/src/ikono/cti-api/config
+      if [[ ! -e api_rest.passwd && ! -e local_settings.py ]]; then
+        cp -v api_rest.passwd.template api_rest.passwd
+        cp -v local_settings.py.template local_settings.py
+      elif [[ ! -e api_rest.passwd ]]; then
+        cp -v api_rest.passwd.template api_rest.passwd
+      elif [[ ! -e local_settings.py ]]; then
+        cp -v local_settings.py.template local_settings.py
+      else
+        echo "OK"
+      fi
+  register: config_files_cti_api
+  changed_when: config_files_cti_api.stdout != "OK"
