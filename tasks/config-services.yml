@@ -1,11 +1,9 @@
-- name: "Enable Nginx"
+- name: "Enable and start services"
   service: 
-    name: nginx
+    name: "{{ item }}"
     enabled: yes
     state: started
-
-- name: "Enable Supervisor"
-  service: 
-    name: supervisord
-    enabled: yes
-    state: started
+  loop: 
+    - nginx
+    - supervisord
+    - ntpd
