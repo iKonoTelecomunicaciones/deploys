@@ -1,0 +1,20 @@
+- name: "Add new keys to ip_mapping"
+  shell:
+    cmd: |
+      cd /etc/ikono/
+      if [[ ! $(svn st config.json) && ! $(grep cti_api config.json) ]]; then
+        for key in $(jq '.client[].tally.host' config.json); do 
+          cat config.json | jq -r ".client[$key] |= .+ {\"sounds\": {\"host\": $key, \"port\": \"8000\" }, \"images\": {\"host\": $key, \"port\": \"8000\" }, \"mail\": {\"host\": $key, \"port\": \"9000\" }, \"cti_api\": {\"websocket\": {\"host\": $key, \"port\": \"8060\", \"secure_port\": \"8061\"}}}" | tee config.json
+        done
+        if [[ ! $(jq '.' /etc/ikono/config.json) ]]; then
+          svn revert config.json
+          exit 1
+        fi
+      elif [[ $(svn st config.json) && ! $(grep cti_api config.json) ]]; then
+        echo "Tiene cambios"
+      else
+        echo "OK"
+      fi
+  register: add_config_ip_mapping
+  failed_when: add_config_ip_mapping.stdout == "Tiene cambios"
+  changed_when: add_config_ip_mapping.stdout != "OK"
