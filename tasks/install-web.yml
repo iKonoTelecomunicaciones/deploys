@@ -1,137 +1,338 @@
-- name: "Create directory for iKonoSuite"
-  file:
-    path: "~/web"
-    state: directory
+# - name: "Create directory for iKonoSuite"
+#   file:
+#     path: "~/web"
+#     state: directory
 
-- name: "Download provisioner API"
-  subversion:
-    repo: http://dev.ikono.com.co/svn/provisioner_api/trunk
-    dest: /home/ikono/web/provisioner_api
-    username: "{{ svn_username }}"
-    password: "{{ svn_password }}"
-    checkout: yes
-    update: yes
-    switch: no
-    force: no
+# - name: "Download provisioner API"
+#   subversion:
+#     repo: http://dev.ikono.com.co/svn/provisioner_api/trunk
+#     dest: /home/ikono/web/provisioner_api
+#     username: "{{ svn_username }}"
+#     password: "{{ svn_password }}"
+#     checkout: yes
+#     update: yes
+#     switch: no
+#     force: no
 
-- name: "Config subversion"
-  lineinfile:
-    path: "~/.subversion/servers"
-    regexp: '^# store-passwords'
-    line: "store-passwords = no"
+# - name: "Config subversion"
+#   lineinfile:
+#     path: "~/.subversion/servers"
+#     regexp: '^# store-passwords'
+#     line: "store-passwords = no"
 
-- name: "Clone backend proyect" 
-  git: 
-    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/ikono_suite_backend.git"
-    dest: /home/ikono/web/ikono_suite_backend
-    clone: yes
-    update: no
+# - name: "Clone backend proyect" 
+#   git: 
+#     repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/ikono_suite_backend.git"
+#     dest: /home/ikono/web/ikono_suite_backend
+#     clone: yes
+#     update: no
 
-- name: "Config git for backend"
+# - name: "Config git for backend"
+#   shell:
+#     cmd: |
+#       if [[ $( grep {{ git_password }} ~/web/ikono_suite_backend/.git/config ) ]]; then 
+#         sed -i "s/:{{ git_password }}//g" ~/web/ikono_suite_backend/.git/config
+#       else
+#         echo "OK"
+#       fi
+#   register: config_git_backend
+#   changed_when: config_git_backend.stdout != "OK"
+
+# - name: "Clone frontend proyect" 
+#   git: 
+#     repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/build_ikono_suite_frontend.git"
+#     dest: /home/ikono/web/build_ikono_suite_frontend
+#     clone: yes
+#     update: no
+
+# - name: "Config git for frontend"
+#   shell:
+#     cmd: |
+#       if [[ $( grep {{ git_password }} ~/web/build_ikono_suite_frontend/.git/config ) ]]; then 
+#         sed -i "s/:{{ git_password }}//g" ~/web/build_ikono_suite_frontend/.git/config
+#       else
+#         echo "OK"
+#       fi
+#   register: config_git_frontend
+#   changed_when: config_git_frontend.stdout != "OK"
+
+# - name: "Dirs for backend"
+#   file:
+#     path: "{{ item }}"
+#     state: directory
+#   loop: 
+#     - ~/web/ikono_suite_backend/media/sounds
+#     - ~/web/ikono_suite_backend/media/moh
+#     - ~/web/ikono_suite_backend/media/recordings
+#     - ~/web/ikono_suite_backend/logs
+
+# - name: "Database logs file for backend"
+#   file:
+#     path: ~/web/ikono_suite_backend/logs/database.log
+#     state: touch
+
+# - name: "Upgrade pip package manager for ikono_suite virtualenv"
+#   shell:
+#     cmd: | 
+#       source ~/.envs/ikono_suite/bin/activate
+#       PIPVER=$(pip list --outdated | grep pip | awk '{print $2}')
+#       if [[ $(pip list --outdated | grep pip | awk '{print $3}') > $PIPVER ]]; then
+#         python -m pip install --upgrade pip
+#       else
+#         echo "OK"
+#       fi
+#   register: upgrade_pip
+#   changed_when: upgrade_pip.stdout != "OK"
+
+# - name: "Pip install requeriments.txt for ikono_suite virtualenv"
+#   pip:
+#     requirements: ~/web/ikono_suite_backend/requirements.txt
+#     virtualenv: ~/.envs/ikono_suite/
+#     state: present
+
+# - name: "Create config files for backend django"
+#   shell:
+#     cmd: |
+#       cd ~/web/ikono_suite_backend
+#       if [[ ! -e ikono_suite/local_settings.py && ! -e ikono_suite/monitoring_settings.py ]]; then
+#         cp -v ikono_suite/local_settings.py.template ikono_suite/local_settings.py
+#         cp -v ikono_suite/monitoring_settings.py.template ikono_suite/monitoring_settings.py
+#       elif [[ ! -e ikono_suite/local_settings.py ]]; then
+#         cp -v ikono_suite/local_settings.py.template ikono_suite/local_settings.py
+#       elif [[ ! -e ikono_suite/monitoring_settings.py ]]; then
+#         cp -v ikono_suite/monitoring_settings.py.template ikono_suite/monitoring_settings.py
+#       else
+#         echo "OK"
+#       fi
+#   register: config_backend_files_django
+#   changed_when: config_backend_files_django.stdout != "OK"
+
+- name: "Config files for backend django"
   shell:
     cmd: |
-      if [[ $( grep {{ git_password }} ~/web/ikono_suite_backend/.git/config ) ]]; then 
-        sed -i "s/:{{ git_password }}//g" ~/web/ikono_suite_backend/.git/config
+      cd ~/web/ikono_suite_backend/ikono_suite
+      if [[ ! $(grep {{ mysql_db_name }} local_settings.py) ]]; then
+        
+        item=""
+        component="" 
+
+        function get_data() {
+        item=$1
+        mysql -s repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} -e "SELECT SUBSTRING(SUBSTRING(params FROM position('${item}=' in params)+LENGTH('${item}=')) FROM 1 for position('\n' in SUBSTRING(params FROM position('${item}=' in params)+LENGTH('${item}=')))-1) AS result FROM jos_components WHERE \`option\`='${component}';"
+        }
+        
+        # Config file local_settings.py
+
+        component="com_setup"
+        EXTENSION_PREFIX=$(if [[ $(get_data extension_prefix) ]];then get_data extension_prefix; else echo "1";fi)
+        EXTENSION_LENGTH=$(if [[ $(get_data extension_length) ]];then get_data extension_length; else echo 3;fi)
+        EXTENSION_REGEX=$(if [[ $(get_data extension_regex) ]];then get_data extension_regex; else echo "^[rm]?[1-7][0-9]{2}$";fi)
+        AGENTS_EXTENSION_REGEX=$(if [[ $(get_data agents_extension_regex) ]];then get_data agents_extension_regex; else echo "^8[0-9]{2}$";fi)
+        OUTBOUND_CALLS_PASSWORD_LENGTH=$(if [[ $(get_data user_passwd_length) ]];then get_data user_passwd_length; else echo 4;fi)
+        MAILBOX_PASSWORD_LENGTH=$(if [[ $(get_data voicemail_passwd_length) ]];then get_data voicemail_passwd_length; else echo 4;fi)
+        DEFAULT_EXTENSION_TEMPLATE=$(if [[ $(get_data default_template) ]];then get_data default_template; else echo 'extension';fi)
+        DEFAULT_EXTENSION_CONTEXT=$(if [[ $(get_data default_context) ]];then get_data default_context; else echo 'UsuarioLDN';fi)
+        AGENT_PASSWD_LENGTH=$(if [[ $(get_data passwd_length) ]];then get_data passwd_length; else echo 4;fi)
+        AGENTID_PREFIX=$(if [[ $(get_data agentid_prefix) ]];then get_data agentid_prefix; else echo '9';fi)
+        AGENTID_LENGTH=$(if [[ $(get_data agentid_length) ]];then get_data agentid_length; else echo 3;fi)
+        AGENT_COUNT_LIMIT=$(if [[ $(get_data agent_count_limit) ]];then get_data agent_count_limit; else echo 8;fi)
+        ASK_EXTERNAL_USERID=$(if [[ $(get_data ask_external_userid) == "YES" ]];then echo "True"; else echo "False";fi)
+        EXTERNAL_CODE_LENGTH=$(if [[ $(get_data external_userid_length) ]];then get_data external_userid_length; else echo 6;fi)
+        DEFAULT_AGENT_CAMPAIGN=$(if [[ $(get_data default_campaign) ]];then get_data default_campaign; else echo 'Outgoing';fi)
+        DEFAULT_AGENT_SUBCAMPAIGN=$(if [[ $(get_data default_subcampaign) ]];then get_data default_subcampaign; else echo 'Outgoing';fi)
+        RELOGIN_AFTER_SAVE=$(if [[ $(get_data relogin_after_save) == "YES" ]];then echo "True"; else echo "False";fi)
+
+        component="com_agents" 
+        ASTERISK_HOST=$(if [[ $(get_data asterisk_host) ]];then get_data asterisk_host; else echo 'localhost';fi)
+        ASTERISK_HOST_SSH_PORT=$(if [[ $(get_data ssh_port) ]];then get_data ssh_port; else echo 22;fi)
+        RECORDINGS_HOST=$(if [[ $(get_data asterisk_host) ]];then get_data asterisk_host; else echo 'localhost';fi)
+        RECORDINGS_SSH_PORT=$(if [[ $(get_data ssh_port) ]];then get_data ssh_port; else echo 22;fi)
+
+        component="com_devices"
+        PROVISIONING_PATH=$(if [[ $(get_data provisioning_path) ]];then get_data provisioning_path; else echo '/tftpboot';fi)
+        PROVISIONER_SERVER=$(if [[ $(get_data provisioner_server) ]];then get_data provisioner_server; else echo 'localhost';fi)
+        HTTP_USER=$(if [[ $(get_data http_user) ]];then get_data http_user; else echo 'ipphone';fi)
+        HTTP_PASSWORD=$(if [[ $(get_data http_password) ]];then get_data http_password; else echo 'h2tQKf0i';fi)
+
+        component="com_reportes"
+        USE_SHIFTS=$(if [[ $(get_data use_shifts) == "YES" ]];then echo True; else echo False;fi)
+
+        CMSETUP_API_HOST=$(mysql -s repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} -e "SELECT SUBSTRING(SUBSTRING(params FROM position('rest_url=http://' in params)+LENGTH('rest_url=http://')) FROM 1 for position(':' in SUBSTRING(params FROM position('rest_url=http://' in params)+LENGTH('rest_url=http://')))-1) AS result FROM jos_components WHERE \`option\`='com_setup';")
+
+        DB_NAME={{ mysql_db_name }}
+        DB_USER={{ mysql_db_user }}
+        DB_PASSWORD={{ mysql_db_password }}
+        PRODUCTS='pbx-call'
+        SSH_USER='{{ ikono_username }}'
+        HOSTS=$(jq '.client[].tally.host' /etc/ikono/config.json | sed "s/\"/'/g;s/^/, /g")
+        ASTERISK_HOST_SSH_USER='{{ ikono_username }}'
+        ASTERISK_HOST_SSH_KEY='/home/{{ ikono_username }}/.ssh/id_rsa'
+        CTI_API_USER='{{ cti_api_username }}'
+        CTI_API_PASSWD='{{ cti_api_password }}'
+
+        sed -i "
+        s/\('NAME': '\)'.*/\1${DB_NAME}',/g
+        s/\('USER': '\)'.*/\1${DB_USER}',/g
+        s/\('PASSWORD': '\)'.*/\1${DB_PASSWORD}',/g
+        s/\(^PRODUCTS = \).*/\1'${PRODUCTS}'/g
+        s/\(^SSH_USER = \).*/\1\"$SSH_USER\"/g
+        s/\(^ALLOWED_HOSTS = \['localhost'\)\].*/\1$(echo ${HOSTS})]/g
+        s/\(^PYTHON_PATH = '\).*/\1python2.7'/g
+        s/\(^RECORDINGS_HOST = '\).*/\1${RECORDINGS_HOST}'/g
+        s/\(^RECORDINGS_SSH_PORT = \).*/\1${RECORDINGS_SSH_PORT}/g
+        s/\(^EXTENSION_PREFIX = \"\).*/\1${EXTENSION_PREFIX}\"/g
+        s/\(^EXTENSION_LENGTH = \).*/\1${EXTENSION_LENGTH}/g
+        s/\(^EXTENSION_REGEX = \).*/\1\"${EXTENSION_REGEX}\"/g
+        s/\(^AGENTS_EXTENSION_REGEX = \).*/\1\"${AGENTS_EXTENSION_REGEX}\"/g
+        s/\(^OUTBOUND_CALLS_PASSWORD_LENGTH = \).*/\1${OUTBOUND_CALLS_PASSWORD_LENGTH}/g
+        s/\(^MAILBOX_PASSWORD_LENGTH = \).*/\1${MAILBOX_PASSWORD_LENGTH}/g
+        s/\(^DEFAULT_EXTENSION_TEMPLATE = \).*/\1'${DEFAULT_EXTENSION_TEMPLATE}'/g
+        s/\(^DEFAULT_EXTENSION_CONTEXT = \).*/\1'${DEFAULT_EXTENSION_CONTEXT}'/g
+        s/\(^ASTERISK_HOST = \).*/\1'${ASTERISK_HOST}'/g
+        s/\(^ASTERISK_HOST_SSH_USER = \).*/\1'${ASTERISK_HOST_SSH_USER}'/g
+        s/\(^ASTERISK_HOST_SSH_PORT = \).*/\1${ASTERISK_HOST_SSH_PORT}/g
+        s#\(^ASTERISK_HOST_SSH_KEY = \).*#\1'${ASTERISK_HOST_SSH_KEY}'#g
+        s#\(^PROVISIONING_PATH = \).*#\1'${PROVISIONING_PATH}'#g
+        s/\(^PROVISIONER_SERVER = \).*/\1'${PROVISIONER_SERVER}'/g
+        s/\(^HTTP_USER = \).*/\1'${HTTP_USER}'/g
+        s/\(^HTTP_PASSWORD = \).*/\1'${HTTP_PASSWORD}'/g
+        s/\(^CMSETUP_API_HOST = \).*/\1'${CMSETUP_API_HOST}'/g
+        s/\(^AGENT_PASSWD_LENGTH = \).*/\1${AGENT_PASSWD_LENGTH}/g
+        s/\(^AGENTID_PREFIX = \).*/\1'${AGENTID_PREFIX}'/g
+        s/\(^AGENTID_LENGTH = \).*/\1${AGENTID_LENGTH}/g
+        s/\(^AGENT_COUNT_LIMIT = \).*/\1${AGENT_COUNT_LIMIT}/g
+        s/\(^ASK_EXTERNAL_USERID = \).*/\1${ASK_EXTERNAL_USERID}/g
+        s/\(^EXTERNAL_CODE_LENGTH = \).*/\1${EXTERNAL_CODE_LENGTH}/g
+        s/\(^DEFAULT_AGENT_CAMPAIGN = \).*/\1'${DEFAULT_AGENT_CAMPAIGN}'/g
+        s/\(^DEFAULT_AGENT_SUBCAMPAIGN = \).*/\1'${DEFAULT_AGENT_SUBCAMPAIGN}'/g
+        s/\(^USE_SHIFTS = \).*/\1${USE_SHIFTS}/g
+        s/\(^RELOGIN_AFTER_SAVE = \).*/\1${RELOGIN_AFTER_SAVE}/g
+        s/\('USER': '\)x'.*/\1${CTI_API_USER}',/g
+        s/\('PASSWD': '\)x'.*/\1${CTI_API_PASSWD}',/g
+        " local_settings.py
+        
+        # Config file monitoring_settings.py
+
+        component="com_monitoring"
+        EXPECTED_ANSWER_SECONDS=$(if [[ $(get_data expected_answer_seconds) ]];then get_data expected_answer_seconds; else echo 20;fi)
+        INCLUDE_FAILED_CALLS_IN_SL=$(if [[ $(get_data include_failed_calls_in_sl) == "1" ]];then echo True; else echo False;fi)
+        INCLUDE_FAILED_CALLS_IN_FC=$(if [[ $(get_data include_failed_calls_in_fc) == "1" ]];then echo True; else echo False;fi)
+        SERVICE_LEVEL_WARNING=$(if [[ $(get_data service_level_warning) ]];then get_data service_level_warning; else echo 80;fi)
+        SERVICE_LEVEL_CRITICAL=$(if [[ $(get_data service_level_critical) ]];then get_data service_level_critical; else echo 70;fi)
+        ABANDON_RATE_WARNING=$(if [[ $(get_data abandon_rate_warning) ]];then get_data abandon_rate_warning; else echo 10;fi)
+        ABANDON_RATE_CRITICAL=$(if [[ $(get_data abandon_rate_critical) ]];then get_data abandon_rate_critical; else echo 20;fi)
+        PLOT_MINUTE_INTERVAL=$(if [[ $(get_data plot_minute_interval) ]];then get_data plot_minute_interval; else echo 10;fi)
+        PLOT_HOURS=$(if [[ $(get_data plot_hours) ]];then get_data plot_hours; else echo 4;fi)
+        QUEUE_HOLD_TIME_WARNING=$(if [[ $(get_data queue_hold_time_warning) ]];then get_data queue_hold_time_warning; else echo 10;fi)
+        QUEUE_HOLD_TIME_CRITICAL=$(if [[ $(get_data queue_hold_time_critical) ]];then get_data queue_hold_time_critical; else echo 20;fi)
+        QUEUE_HOLD_CALL_COUNT_WARNING=$(if [[ $(get_data queue_hold_call_count_warning) ]];then get_data queue_hold_call_count_warning; else echo 1;fi)
+        QUEUE_HOLD_CALL_COUNT_CRITICAL=$(if [[ $(get_data queue_hold_call_count_critical) ]];then get_data queue_hold_call_count_critical; else echo 3;fi)
+        TRANSFER_CONTEXT=$(if [[ $(get_data transfer_context) ]];then get_data transfer_context; else echo "UsuarioLOC";fi)
+        ANSWER_OP_CONTEXT=$(if [[ $(get_data answer_op_context) ]];then get_data answer_op_context; else echo "To-Supervisor";fi)
+        MANAGER_PAUSEREASON=$(if [[ $(get_data manager_pausereason) ]];then get_data manager_pausereason; else echo "PAUSED_BY_SUPER";fi)
+        COMPLETE_CALLS_SHOW_TIME=$(if [[ $(get_data complete_calls_show_time) ]];then get_data complete_calls_show_time; else echo 5;fi)
+        DEFAULT_EXPEL_MENU=$(if [[ $(get_data default_expel_menu) ]];then get_data default_expel_menu; else echo "Main.conf";fi)
+        LAYOUT_DISTRIBUTION=$(if [[ $(get_data layout_distribution) ]];then get_data layout_distribution; else echo "COLUMNS";fi)
+        FIRST_SECTION=$(if [[ $(get_data first_section) ]];then get_data first_section; else echo "queues";fi)
+        SECOND_SECTION=$(if [[ $(get_data second_section) ]];then get_data second_section; else echo "agents,calls";fi)
+        DISABLED_OPERATIONS_USER=$(if [[ $(get_data disabled_operations_user) ]];then get_data disabled_operations_user; else echo "lcd";fi)
+
+        INITIAL_HOUR=$(mysql -s repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} -e "SELECT SUBSTRING(SUBSTRING(params FROM position('initial_hour=0' in params)+LENGTH('initial_hour=0')) FROM 1 for position(':' in SUBSTRING(params FROM position('initial_hour=0' in params)+LENGTH('initial_hour=0')))-1) AS result FROM jos_components WHERE \`option\`='com_monitoring';")
+
+        sed -i "
+        s/\(^EXPECTED_ANSWER_SECONDS = \).*/\1${EXPECTED_ANSWER_SECONDS}/g
+        s/\(^INCLUDE_FAILED_CALLS_IN_SL = \).*/\1${INCLUDE_FAILED_CALLS_IN_SL}/g
+        s/\(^INCLUDE_FAILED_CALLS_IN_FC = \).*/\1${INCLUDE_FAILED_CALLS_IN_FC}/g
+        s/\(^SERVICE_LEVEL_WARNING = \).*/\1${SERVICE_LEVEL_WARNING}/g
+        s/\(^SERVICE_LEVEL_CRITICAL = \).*/\1${SERVICE_LEVEL_CRITICAL}/g
+        s/\(^ABANDON_RATE_WARNING = \).*/\1${ABANDON_RATE_WARNING}/g
+        s/\(^ABANDON_RATE_CRITICAL = \).*/\1${ABANDON_RATE_CRITICAL}/g
+        s/\(^PLOT_MINUTE_INTERVAL = \).*/\1${PLOT_MINUTE_INTERVAL}/g
+        s/\(^PLOT_HOURS = \).*/\1${PLOT_HOURS}/g
+        s/\(^QUEUE_HOLD_TIME_WARNING = \).*/\1${QUEUE_HOLD_TIME_WARNING}/g
+        s/\(^QUEUE_HOLD_TIME_CRITICAL = \).*/\1${QUEUE_HOLD_TIME_CRITICAL}/g
+        s/\(^QUEUE_HOLD_CALL_COUNT_WARNING = \).*/\1${QUEUE_HOLD_CALL_COUNT_WARNING}/g
+        s/\(^QUEUE_HOLD_CALL_COUNT_CRITICAL = \).*/\1${QUEUE_HOLD_CALL_COUNT_CRITICAL}/g
+        s/\(^TRANSFER_CONTEXT = \).*/\1\"${TRANSFER_CONTEXT}\"/g
+        s/\(^ANSWER_OP_CONTEXT = \).*/\1\"${ANSWER_OP_CONTEXT}\"/g
+        s/\(^MANAGER_PAUSEREASON = \).*/\1\"${MANAGER_PAUSEREASON}\"/g
+        s/\(^COMPLETE_CALLS_SHOW_TIME = \).*/\1${COMPLETE_CALLS_SHOW_TIME}/g
+        s/\(^DEFAULT_EXPEL_MENU = \).*/\1\"${DEFAULT_EXPEL_MENU}\"/g
+        s/\(^LAYOUT_DISTRIBUTION = \).*/\1\"${LAYOUT_DISTRIBUTION}\"/g
+        s/\(^FIRST_SECTION = \).*/\1\"${FIRST_SECTION}\"/g
+        s/\(^SECOND_SECTION = \).*/\1\"${SECOND_SECTION}\"/g
+        s/\(^DISABLED_OPERATIONS_USER = \).*/\1\"${DISABLED_OPERATIONS_USER}\"/g
+        s/\(^INITIAL_HOUR = \).*/\1${INITIAL_HOUR}/g
+        " monitoring_settings.py
+
       else
         echo "OK"
       fi
-  register: config_git_backend
-  changed_when: config_git_backend.stdout != "OK"
+  register: config_file_backtend_django
+  changed_when: config_file_backtend_django.stdout != "OK"
 
-- name: "Clone frontend proyect" 
-  git: 
-    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/build_ikono_suite_frontend.git"
-    dest: /home/ikono/web/build_ikono_suite_frontend
-    clone: yes
-    update: no
+# - name: "Create config files for frontend"
+#   shell:
+#     cmd: |
+#       cd ~/web/build_ikono_suite_frontend/assets/config/
+#       if [[ ! -e config.deploy.json ]]; then
+#         cp -v config.json.template config.deploy.json
+#       else
+#         echo "OK"
+#       fi
+#   register: config_frontend_files_django
+#   changed_when: config_frontend_files_django.stdout != "OK"
 
-- name: "Config git for frontend"
-  shell:
-    cmd: |
-      if [[ $( grep {{ git_password }} ~/web/build_ikono_suite_frontend/.git/config ) ]]; then 
-        sed -i "s/:{{ git_password }}//g" ~/web/build_ikono_suite_frontend/.git/config
-      else
-        echo "OK"
-      fi
-  register: config_git_frontend
-  changed_when: config_git_frontend.stdout != "OK"
-
-- name: "Dirs for backend"
-  file:
-    path: "{{ item }}"
-    state: directory
-  loop: 
-    - ~/web/ikono_suite_backend/media/sounds
-    - ~/web/ikono_suite_backend/media/moh
-    - ~/web/ikono_suite_backend/media/recordings
-    - ~/web/ikono_suite_backend/logs
-
-- name: "Database logs file for backend"
-  file:
-    path: ~/web/ikono_suite_backend/logs/database.log
-    state: touch
-
-- name: "Upgrade pip package manager for ikono_suite virtualenv"
-  shell:
-    cmd: | 
-      source ~/.envs/ikono_suite/bin/activate
-      PIPVER=$(pip list --outdated | grep pip | awk '{print $2}')
-      if [[ $(pip list --outdated | grep pip | awk '{print $3}') > $PIPVER ]]; then
-        python -m pip install --upgrade pip
-      else
-        echo "OK"
-      fi
-  register: upgrade_pip
-  changed_when: upgrade_pip.stdout != "OK"
-
-- name: "Pip install requeriments.txt for ikono_suite virtualenv"
-  pip:
-    requirements: ~/web/ikono_suite_backend/requirements.txt
-    virtualenv: ~/.envs/ikono_suite/
-    state: present
-
-- name: "Create config files for backend django"
-  shell:
-    cmd: |
-      cd ~/web/ikono_suite_backend
-      if [[ ! -e ikono_suite/local_settings.py && ! -e ikono_suite/monitoring_settings.py ]]; then
-        cp -v ikono_suite/local_settings.py.template ikono_suite/local_settings.py
-        cp -v ikono_suite/monitoring_settings.py.template ikono_suite/monitoring_settings.py
-      elif [[ ! -e ikono_suite/local_settings.py ]]; then
-        cp -v ikono_suite/local_settings.py.template ikono_suite/local_settings.py
-      elif [[ ! -e ikono_suite/monitoring_settings.py ]]; then
-        cp -v ikono_suite/monitoring_settings.py.template ikono_suite/monitoring_settings.py
-      else
-        echo "OK"
-      fi
-  register: config_backend_files_django
-  changed_when: config_backend_files_django.stdout != "OK"
-
-- name: "Create config files for frontend django"
+- name: "Config file for frontend"
   shell:
     cmd: |
       cd ~/web/build_ikono_suite_frontend/assets/config/
-      if [[ ! -e config.deploy.json ]]; then
-        cp -v config.json.template config.deploy.json
+      if [[ $(grep "backend" config.deploy.json) ]]; then
+
+        cat config.deploy.json | grep -vE " //|// |^$|Host por el que" | tee config.deploy.json
+
+        API_HOST=$(grep cmhost /etc/cmmonitor/cmmonitor.conf | cut -d'=' -f2 | sed "s/ //g")
+        API_PORT=8000
+        PRODUCT='pbx-call'
+        TOOLS_HOST=$(grep host /etc/cmgateway/cmservers.ini | cut -d':' -f2 | sed "s/ //g")
+
+        sed -i.bk "
+        s/\(API_HOST\":\).*/\1 \"${API_HOST}\",/g
+        s/\(API_PORT\":\).*/\1 \"${API_PORT}\",/g
+        s/\(PRODUCT\":\).*/\1 \"${PRODUCT}\",/g
+        s/\(TOOLS_HOST\":\).*/\1 \"${TOOLS_HOST}\",/g
+        s/ TeamViewerQS/TeamViewerQS/g
+        s/TeamViewerQS.dmg /TeamViewerQS.dmg/g
+        " config.deploy.json
+
+        for host in $(jq '.client[].tally.host' /etc/ikono/config.json); do 
+          cat config.deploy.json | jq -r ".hosts |= .+ {${host}: ${host}}" | tee config.deploy.json
+        done
+
+        if [[ ! $(jq '.' config.deploy.json) ]]; then
+          cp -v config.deploy.json.bk config.deploy.json
+          echo "Faltan los hosts"
+        fi
+
       else
         echo "OK"
       fi
-  register: config_frontend_files_django
-  changed_when: config_frontend_files_django.stdout != "OK"
+  register: config_file_frontend
+  changed_when: config_file_frontend.stdout != "OK"
 
-- name: "Dir for client logotype image"
-  file:
-    path: "~/web/build_ikono_suite_frontend/assets/img/client"
-    state: directory
+# - name: "Dir for client logotype image"
+#   file:
+#     path: "~/web/build_ikono_suite_frontend/assets/img/client"
+#     state: directory
 
-- name: "Copy client logotype image"
-  shell:
-    cmd: |
-      cd ~/web/build_ikono_suite_frontend/assets/img/client
-      if [[ -e /var/www/html/cmweb/images/customer_logo.png && ! -e customer_logo.png ]]; then
-        cp -pv /var/www/html/cmweb/images/customer_logo.png .
-      else
-        echo "OK"
-      fi
-  register: copy_file_logotype
-  changed_when: copy_file_logotype.stdout != "OK"
+# - name: "Copy client logotype image"
+#   shell:
+#     cmd: |
+#       cd ~/web/build_ikono_suite_frontend/assets/img/client
+#       if [[ -e /var/www/html/cmweb/images/customer_logo.png && ! -e customer_logo.png ]]; then
+#         cp -pv /var/www/html/cmweb/images/customer_logo.png .
+#       else
+#         echo "OK"
+#       fi
+#   register: copy_file_logotype
+#   changed_when: copy_file_logotype.stdout != "OK"
