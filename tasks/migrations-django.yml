@@ -1,0 +1,46 @@
+- name: "django migrations"
+  shell:
+    cmd: |
+      source ~/.envs/ikono_suite/bin/activate
+      cd ~/web/ikono_suite_backend/
+      if [[ $(python manage.py showmigrations | grep -E "\[ \]" | wc -l) != '0' ]]; then
+        python manage.py migrate admin
+        python manage.py migrate auth
+        python manage.py migrate contenttypes
+        python manage.py migrate sessions
+        python manage.py migrate --fake-initial dialplan
+        python manage.py migrate --fake-initial sounds
+        python manage.py migrate --fake-initial predialer
+        python manage.py migrate --fake-initial dialer
+        python manage.py migrate --fake-initial devices
+        python manage.py migrate --fake-initial textmessages
+        python manage.py migrate --fake-initial agents
+        python manage.py migrate --fake-initial reports
+        python manage.py migrate requestlog
+        python manage.py migrate account 0001
+        python manage.py migrate account 0002
+        python manage.py migrate account
+        python manage.py collectstatic
+      else
+        echo "OK"
+      fi
+  register: django_migrations
+  changed_when: django_migrations.stdout != "OK"
+
+- name: "django create superuser"
+  shell:
+    cmd: |
+      source ~/.envs/ikono_suite/bin/activate
+      cd ~/web/ikono_suite_backend/
+      
+      MIGRATED=$(if [[ $(python manage.py showmigrations | grep -E "\[ \]" | wc -l) == '0' ]]; then echo True; fi)
+      CREATED_SUPERUSER=$(python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.filter(username='{{ django_username }}').count()>0)" | grep -v ikono_suite_backend)
+      
+      if [[ ${MIGRATED} == True && ${CREATED_SUPERUSER} == False ]]; then
+        python manage.py createsuperuser --noinput --username='{{ django_username }}' --email='soporte@ikono.com.co'
+        python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User = User.objects.get(username='ikono'); User.set_password('{{ django_password }}'); User.save();"        
+      else
+        echo "OK"
+      fi
+  register: django_superuser
+  changed_when: django_superuser.stdout != "OK"
