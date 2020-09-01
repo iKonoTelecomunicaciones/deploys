@@ -118,3 +118,31 @@
       fi
   register: config_files_cti_api
   changed_when: config_files_cti_api.stdout != "OK"
+
+- name: "Config file local_settings for cti-api"
+  shell:
+    cmd: |
+      cd /usr/local/src/ikono/cti-api/config
+      if [[ $(grep -E "xxx|db_passwd" local_settings.py) ]]; then
+        HOST=$(grep "host" /etc/cmgateway/cmservers.ini | cut -d':' -f2 | sed "s/ //g")
+        SECRET=$(grep "secret" /etc/cmgateway/cmservers.ini | cut -d':' -f2 | sed "s/ //g")
+        
+        sed -i "
+        s/\(^WEB_PORT = \).*/\18050/g
+        s/\(^WS_PORT = \).*/\18060/g
+        s/\(^AMI_HOST = \).*/\1'${HOST}'/g
+        s/\(^AMI_PASSWORD = \).*/\1'${SECRET}'/g
+        s/dbedoya/user/g
+        s/db_name/{{ mysql_db_name }}/g
+        s/db_user/{{ mysql_db_user }}/g
+        s/db_passwd/{{ mysql_db_password }}/g
+        " local_settings.py
+
+        sed -i "
+        s/password/{{ cti_api_password }}/g
+        " api_rest.passwd        
+      else
+        echo "OK"
+      fi
+  register: config_files_cti_api
+  changed_when: config_files_cti_api.stdout != "OK"
