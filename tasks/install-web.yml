@@ -117,8 +117,8 @@
         component="" 
 
         function get_data() {
-        item=$1
-        mysql -s repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} -e "SELECT SUBSTRING(SUBSTRING(params FROM position('${item}=' in params)+LENGTH('${item}=')) FROM 1 for position('\n' in SUBSTRING(params FROM position('${item}=' in params)+LENGTH('${item}=')))-1) AS result FROM jos_components WHERE \`option\`='${component}';"
+          item=$1
+          mysql -s repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} -e "SELECT SUBSTRING(SUBSTRING(params FROM position('${item}=' in params)+LENGTH('${item}=')) FROM 1 for position('\n' in SUBSTRING(params FROM position('${item}=' in params)+LENGTH('${item}=')))-1) AS result FROM jos_components WHERE \`option\`='${component}';"
         }
         
         # Config file local_settings.py
@@ -289,10 +289,11 @@
       cd ~/web/build_ikono_suite_frontend/assets/config/
       if [[ $(grep "backend" config.deploy.json) ]]; then
 
-        cat config.deploy.json | grep -vE " //|// |^$|Host por el que" | tee config.deploy.json
+        /bin/cp -v config.deploy.json /tmp/config.deploy.json.tmp
+        cat /tmp/config.deploy.json.tmp | grep -vE " //|// |^$|Host por el que" | tee config.deploy.json
 
         API_HOST=$(grep cmhost /etc/cmmonitor/cmmonitor.conf | cut -d'=' -f2 | sed "s/ //g")
-        API_PORT=8000
+        API_PORT='8000'
         PRODUCT='pbx-call'
         TOOLS_HOST=$(grep host /etc/cmgateway/cmservers.ini | cut -d':' -f2 | sed "s/ //g")
 
@@ -305,19 +306,23 @@
         s/TeamViewerQS.dmg /TeamViewerQS.dmg/g
         " config.deploy.json
 
-        for host in $(jq '.client[].tally.host' /etc/ikono/config.json); do 
-          cat config.deploy.json | jq -r ".hosts |= .+ {${host}: ${host}}" | tee config.deploy.json
+        HOSTS=$(jq '.client[].tally.host' /etc/ikono/config.json)
+        for host in ${HOSTS}; do 
+          /bin/cp -v config.deploy.json /tmp/config.deploy.json.tmp
+          cat /tmp/config.deploy.json.tmp | jq -r ".hosts |= .+ {${host}: ${host}}" | tee config.deploy.json
         done
 
         if [[ ! $(jq '.' config.deploy.json) ]]; then
-          cp -v config.deploy.json.bk config.deploy.json
+          cp -v config.json.template config.deploy.json
           echo "Faltan los hosts"
+          exit 1
         fi
 
       else
         echo "OK"
       fi
   register: config_file_frontend
+  failed_when: config_file_frontend.stdout == "Faltan los hosts"
   changed_when: config_file_frontend.stdout != "OK"
 
 # - name: "Dir for client logotype image"
