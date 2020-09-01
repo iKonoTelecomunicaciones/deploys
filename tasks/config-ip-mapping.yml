@@ -4,7 +4,8 @@
       cd /etc/ikono/
       if [[ ! $(svn st config.json) && ! $(grep cti_api config.json) ]]; then
         for key in $(jq '.client[].tally.host' config.json); do 
-          cat config.json | jq -r ".client[$key] |= .+ {\"sounds\": {\"host\": $key, \"port\": \"8000\" }, \"images\": {\"host\": $key, \"port\": \"8000\" }, \"mail\": {\"host\": $key, \"port\": \"9000\" }, \"cti_api\": {\"websocket\": {\"host\": $key, \"port\": \"8060\", \"secure_port\": \"8061\"}}}" | tee config.json
+          /bin/cp -v config.json /tmp/config.json.tmp
+          cat /tmp/config.json.tmp | jq -r ".client[$key] |= .+ {\"sounds\": {\"host\": $key, \"port\": \"8000\" }, \"images\": {\"host\": $key, \"port\": \"8000\" }, \"mail\": {\"host\": $key, \"port\": \"9000\" }, \"cti_api\": {\"websocket\": {\"host\": $key, \"port\": \"8060\", \"secure_port\": \"8061\"}}}" | tee config.json
         done
         if [[ ! $(jq '.' /etc/ikono/config.json) ]]; then
           svn revert config.json
