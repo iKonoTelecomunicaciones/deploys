@@ -1,0 +1,21 @@
+# cti-api
+- name: supervisorctl_cti-api_restart
+  supervisorctl:
+    name: cti-api
+    state: restarted
+
+- name: supervisorctl_cti-api_start
+  supervisorctl:
+    name: cti-api
+    state: started
+
+# ikono_suite
+- name: supervisorctl_ikono_suite_restart
+  supervisorctl:
+    name: ikono_suite
+    state: restarted
+
+- name: supervisorctl_ikono_suite_start
+  supervisorctl:
+    name: ikono_suite
+    state: started
