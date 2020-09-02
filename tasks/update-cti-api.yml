@@ -1,0 +1,18 @@
+- name: "Update cti-api proyect" 
+  git: 
+    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/cti-api.git"
+    dest: /usr/local/src/ikono/cti-api
+    clone: no
+    update: yes
+  notify: supervisorctl_cti-api_restart
+
+- name: "Config git for cti-api"
+  shell:
+    cmd: |
+      if [[ $( grep {{ git_password }} /usr/local/src/ikono/cti-api/.git/config ) ]]; then 
+        sed -i "s/:{{ git_password }}//g" /usr/local/src/ikono/cti-api/.git/config
+      else
+        echo "OK"
+      fi
+  register: config_git_cti_api
+  changed_when: config_git_cti_api.stdout != "OK"
