@@ -1,0 +1,53 @@
+- name: "Update backend proyect" 
+  git: 
+    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/ikono_suite_backend.git"
+    dest: /home/ikono/web/ikono_suite_backend
+    clone: no
+    update: yes
+  notify: supervisorctl_ikono_suite_restart
+
+- name: "Config git for backend"
+  shell:
+    cmd: |
+      if [[ $( grep {{ git_password }} ~/web/ikono_suite_backend/.git/config ) ]]; then 
+        sed -i "s/:{{ git_password }}//g" ~/web/ikono_suite_backend/.git/config
+      else
+        echo "OK"
+      fi
+  register: config_git_backend
+  changed_when: config_git_backend.stdout != "OK"
+
+- name: "django migrations"
+  shell:
+    cmd: |
+      source ~/.envs/ikono_suite/bin/activate
+      cd ~/web/ikono_suite_backend/
+      if [[ $(python manage.py showmigrations | grep -E "\[ \]" | wc -l) != '0' ]]; then
+        python manage.py migrate account
+      else
+        echo "OK"
+      fi
+  register: django_migrations
+  changed_when: django_migrations.stdout != "OK"
+  notify: supervisorctl_ikono_suite_restart
+
+- name: "Update frontend proyect" 
+  git: 
+    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/build_ikono_suite_frontend.git"
+    dest: /home/ikono/web/build_ikono_suite_frontend
+    clone: no
+    update: yes
+  notify: supervisorctl_ikono_suite_restart
+  
+- name: "Config git for frontend"
+  shell:
+    cmd: |
+      if [[ $( grep {{ git_password }} ~/web/build_ikono_suite_frontend/.git/config ) ]]; then 
+        sed -i "s/:{{ git_password }}//g" ~/web/build_ikono_suite_frontend/.git/config
+      else
+        echo "OK"
+      fi
+  register: config_git_frontend
+  changed_when: config_git_frontend.stdout != "OK"
+  notify: supervisorctl_ikono_suite_restart
+
