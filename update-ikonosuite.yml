@@ -59,7 +59,6 @@
       when: "'apps' in group_names"
 
     # Config CTI-API
-
     - import_tasks: tasks/install-cti-api.yml
       when: "'apps' in group_names"
 
@@ -70,11 +69,45 @@
     # Update repositories
     - import_tasks: tasks/update-cti-api.yml
       when: "'apps' in group_names"
-  
+    
+    - import_tasks: tasks/update-backend.yml
+      become: yes
+      become_method: su
+      become_user: ikono
+      when: "'apps' in group_names"
+      
+    # Migration
+    - import_tasks: tasks/config-sounds.yml
+      when: "'voice' in group_names"
+
+    - import_tasks: tasks/copy-sounds.yml
+      become: yes
+      become_method: su
+      become_user: ikono
+      when: "'apps' in group_names"
+
+    - import_tasks: tasks/config-database-migration.yml
+      when: "'apps' in group_names"
+
+    - import_tasks: tasks/config-users-and-reports.yml
+      become: yes
+      become_method: su
+      become_user: ikono
+      when: "'apps' in group_names"
+
+    - import_tasks: tasks/config-shifts.yml
+      when: "'apps' in group_names"
+
+    - import_tasks: tasks/config-webserver-migration.yml
+      when: "'apps' in group_names"
+
+    - import_tasks: tasks/check-services.yml
+      when: "'apps' in group_names"
+
   handlers: 
     - import_tasks: handlers/supervisorctl.yml
     - import_tasks: handlers/webserver.yml
-  
+      
   vars_files: 
     - vars/subversion.yml
     - vars/mysql.yml
