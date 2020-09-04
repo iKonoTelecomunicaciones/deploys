@@ -1,13 +1,13 @@
-# - name: "Create /ikono redirect"
-#   file:
-#     path: /var/www/html/ikono
-#     state: directory
+- name: "Create /ikono redirect"
+  file:
+    path: /var/www/html/ikono
+    state: directory
 
-# - name: "Copy index.php file for redirect to nginx"
-#   copy:
-#     src: files/nginx_ikono_index.php
-#     dest: /var/www/html/ikono/index.php
-#     force: no
+- name: "Copy index.php file for redirect to nginx"
+  copy:
+    src: files/nginx_ikono_index.php
+    dest: /var/www/html/ikono/index.php
+    force: no
 
 - name: "Config product port for nginx"
   shell:
@@ -25,27 +25,27 @@
     product_ikono: "pbx-call"
   notify: supervisorctl_ikono_suite_restart
 
-# - name: "Config default port for nginx"
-#   shell:
-#     cmd: | 
-#       if [[ $(grep "9000" /etc/nginx/conf.d/frontend.conf) && $(grep "Listen 80" /etc/httpd/conf/httpd.conf) ]]; then
+- name: "Config default port for nginx"
+  shell:
+    cmd: | 
+      if [[ $(grep "9000" /etc/nginx/conf.d/frontend.conf) && $(grep "Listen 80" /etc/httpd/conf/httpd.conf) ]]; then
 
-#         # default port for nginx
-#         sed -i "s/9000/80/g" /etc/nginx/conf.d/frontend.conf
+        # default port for nginx
+        sed -i "s/9000/80/g" /etc/nginx/conf.d/frontend.conf
         
-#         # 9000 port for apache
-#         sed -i "s/Listen 80/Listen 9000/g" /etc/httpd/conf/httpd.conf
+        # 9000 port for apache
+        sed -i "s/Listen 80/Listen 9000/g" /etc/httpd/conf/httpd.conf
 
-#         service httpd stop
-#         service nginx restart
-#         service httpd start
+        service httpd stop
+        service nginx restart
+        service httpd start
         
-#       elif [[ ! $(grep "80" /etc/nginx/conf.d/frontend.conf) || ! $(grep "Listen 9000" /etc/httpd/conf/httpd.conf) ]]; then  
-#         echo "Validar puertos"
-#       else
-#         echo "OK"
-#       fi
-#   register: config_default_nginx
-#   failed_when: config_default_nginx.stdout == "Validar puertos"
-#   changed_when: config_default_nginx.stdout != "OK"
-#   ignore_errors: true
+      elif [[ ! $(grep "80" /etc/nginx/conf.d/frontend.conf) || ! $(grep "Listen 9000" /etc/httpd/conf/httpd.conf) ]]; then  
+        echo "Validar puertos"
+      else
+        echo "OK"
+      fi
+  register: config_default_nginx
+  failed_when: config_default_nginx.stdout == "Validar puertos"
+  changed_when: config_default_nginx.stdout != "OK"
+  ignore_errors: true
