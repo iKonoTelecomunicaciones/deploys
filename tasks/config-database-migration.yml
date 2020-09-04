@@ -1,0 +1,25 @@
+- name: "Config campaigns and subcampaigns"
+  shell:
+    cmd: |
+      if [[ $(mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} -e "select user,host from mysql.user;" | grep ikono) ]]; then
+        
+        # jos_cm_campaign incoming
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "INSERT INTO jos_cm_campaign(campaign, type, active) SELECT campaign, 'incoming', 1 FROM (SELECT campaign, max(enterdate) as last_date FROM jos_queuelog_enterqueue GROUP BY campaign) t WHERE campaign NOT IN (SELECT campaign FROM jos_cm_campaign WHERE type='incoming') AND last_date >= '2018-01-01';"
+        
+        # jos_cm_campaign outgoing
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "INSERT INTO jos_cm_campaign(campaign, type, active) SELECT campaign, 'outgoing', 1 FROM (SELECT campaign, max(timestart) as last_date FROM jos_queuelog_call GROUP BY campaign) t WHERE campaign NOT IN (SELECT campaign FROM jos_cm_campaign WHERE type='outgoing') AND last_date >= '2018-01-01';" 
+
+        # jos_cm_subcampaign incoming
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "INSERT INTO jos_cm_subcampaign(subcampaign, type, active) SELECT subcampaign, 'incoming', 1 FROM (SELECT subcampaign, max(enterdate) as last_date FROM jos_queuelog_enterqueue GROUP BY subcampaign) t WHERE subcampaign NOT IN (SELECT subcampaign FROM jos_cm_subcampaign WHERE type='incoming') AND last_date >= '2018-01-01';" 
+        
+        # jos_cm_subcampaign outgoing
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "INSERT INTO jos_cm_subcampaign(subcampaign, type, active) SELECT subcampaign, 'outgoing', 1 FROM (SELECT subcampaign, max(timestart) as last_date FROM jos_queuelog_call GROUP BY subcampaign) t WHERE subcampaign NOT IN (SELECT subcampaign FROM jos_cm_subcampaign WHERE type='outgoing') AND last_date >= '2018-01-01';" 
+        
+        # pauses
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "UPDATE jos_cm_pausereason SET translation=pausereason WHERE translation IS NULL;"
+         
+      else
+        echo "OK"
+      fi
+  register: create_user_database
+  changed_when: create_user_database.stdout != "OK"

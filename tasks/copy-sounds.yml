@@ -1,0 +1,12 @@
+- name: "Copy sounds files to backend"
+  shell:
+    cmd: |
+      if [[ ! -e /home/ikono/migracion/ ]]; then
+        HOST=$(grep -i host /etc/cmgateway/cmservers.ini | awk '{print $2}')
+        PORT=$(mysql -s repqueuelog -u{{ mysql_username }} --default-character-set=utf8 -p{{ mysql_password }} -e "select substring(substring(params from position('ssh_port=' in params)+length('ssh_port=')) from 1 for position('\n' in substring(params from position('ssh_port=' in params)+length('ssh_port=')))-1) as port from jos_components where \`option\`='com_agents';")
+        rsync -avphe "ssh -p ${PORT} -o StrictHostKeyChecking=no" ikono@${HOST}:/home/ikono/migracion/ /home/ikono/web/ikono_suite_backend/media/
+      else
+        rsync -avph /home/ikono/migracion/ /home/ikono/web/ikono_suite_backend/media/
+      fi
+  register: copy_sound_files
+  changed_when: copy_sound_files.stdout != ""

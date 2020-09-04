@@ -1,0 +1,18 @@
+- name: "Check services running"
+  service: 
+    name: "{{ item }}"
+    state: started
+  loop: 
+    - nginx
+    - supervisord
+    - ntpd
+
+- name: "Check supervisorctl ikono_suite running"
+  supervisorctl:
+    name: ikono_suite
+    state: started
+
+- name: "Check supervisorctl cti-api running"
+  supervisorctl:
+    name: cti-api
+    state: started

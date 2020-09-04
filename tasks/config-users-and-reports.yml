@@ -1,0 +1,12 @@
+- name: "Config users and reports"
+  shell:
+    cmd: |
+      source ~/.envs/ikono_suite/bin/activate
+      cd ~/web/ikono_suite_backend/
+      if [[ $(mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} -e "select is_active from auth_user;") < 2 ]]; then
+        python manage.py authorization
+      else
+        echo "OK"
+      fi
+  register: config_users_and_reports
+  changed_when: config_users_and_reports.stdout != "OK"

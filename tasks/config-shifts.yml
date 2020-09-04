@@ -1,0 +1,50 @@
+- name: "Update database-trunk sources"
+  subversion:
+    repo: http://dev.ikono.com.co/svn/database/trunk
+    dest: /usr/local/src/ikono/database-trunk/
+    username: "{{ svn_username }}"
+    password: "{{ svn_password }}"
+    checkout: no
+    update: yes
+    switch: no
+    force: no
+
+- name: "Config shifts"
+  shell:
+    cmd: |
+      if [[ $(mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} -e "select user,host from mysql.user;" | grep ikono) ]]; then
+   
+        # Sources replicate shift and agent rules
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "SOURCE /usr/local/src/ikono/database-trunk/agents/replicate_shift_rules.sql; SOURCE /usr/local/src/ikono/database-trunk/agents/replicate_agent_rules.sql"
+
+        # Update timestamp rules
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "UPDATE jos_agents_shift_rules SET start_date = (DATE(CURRENT_TIMESTAMP) - INTERVAL WEEKDAY(CURRENT_TIMESTAMP) DAY) + INTERVAL (dayofweek - 1) DAY, end_date = (DATE(CURRENT_TIMESTAMP) - INTERVAL WEEKDAY(CURRENT_TIMESTAMP) DAY) + INTERVAL (dayofweek - 1) DAY;"
+
+        # validated stdout
+        if [[ $(mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "SELECT start_date, shift_id, COUNT(*) FROM jos_agents_shift_rules GROUP BY start_date, shift_id HAVING COUNT(*) > 1;") ]]; then echo hi; fi
+        
+        # replicate shift rules
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "CALL replicate_shift_rules();"
+
+        # update rule_id in agent history
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "UPDATE jos_agents_agent_shifts, jos_agents_shift_rules SET jos_agents_agent_shifts.rule_id = jos_agents_shift_rules.id WHERE jos_agents_agent_shifts.shift_id = jos_agents_shift_rules.shift_id  AND jos_agents_agent_shifts.start_date = jos_agents_shift_rules.start_date AND jos_agents_agent_shifts.end_date = jos_agents_shift_rules.end_date AND jos_agents_agent_shifts.start_time = jos_agents_shift_rules.start_time AND jos_agents_agent_shifts.end_time = jos_agents_shift_rules.end_time AND jos_agents_agent_shifts.dayofweek = jos_agents_shift_rules.dayofweek;"
+
+      else
+        echo "OK"
+      fi
+  register: config_shifts
+  changed_when: config_shifts.stdout != "OK"
+
+- name: "Config cron for shitfs"
+  shell:
+    cmd: |
+      if [[ ! $(grep replicate_shift_rules /var/spool/cron/root) ]]; then
+        echo "30 1 * * 1 mysql repqueuelog -u repqueuelog -ponokimysql -e \"CALL replicate_shift_rules();\" &> /dev/null" >> /var/spool/cron/root
+      elif [[ ! -e /var/spool/cron/root ]]; then
+        echo "Not found /var/spool/cron/root file"
+        exit 1
+      else
+        echo "OK"
+      fi
+  register: config_cron_shift
+  changed_when: config_cron_shift.stdout != "OK"

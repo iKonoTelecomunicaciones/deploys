@@ -1,0 +1,47 @@
+- name: "Create directories for sounds in home"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: ikono
+    group: ikono
+  loop:
+    - /home/ikono/migracion/sounds
+    - /home/ikono/migracion/moh
+
+- name: "Config custom sounds files"
+  shell:
+    cmd: |
+      if [[ -e /home/ikono/migracion/sounds/ && $(ls /var/lib/asterisk/sounds/custom/ | grep wav) ]]; then
+        cd /var/lib/asterisk/sounds/custom/
+        for f in *.wav; do 
+          name=${f##*/}; 
+          name2=${name%.*}; 
+          sox -S $name /home/ikono/migracion/sounds/$name2.ogg; 
+        done
+      else
+        echo "OK"
+      fi
+  register: config_custom_sounds
+  changed_when: config_custom_sounds.stdout != "OK"
+
+- name: "Config moh sounds files"
+  shell:
+    cmd: |
+      if [[ -e /home/ikono/migracion/moh && $(ls -d /var/lib/asterisk/moh/*/) ]]; then
+        cd /var/lib/asterisk/moh/
+        for f in `ls -d */`; do
+          name=${f#"/"};
+          name=${name%"/"};
+          echo $name;
+          mkdir -p /home/ikono/migracion/moh/$name
+          for wav_file in $name/*.wav; do
+            sound_name=${wav_file##*/};
+            sound_name2=${sound_name%.*};
+            sox $name/$sound_name /home/ikono/migracion/moh/$name/$sound_name2.ogg;
+          done
+        done
+      else
+        echo "OK"
+      fi
+  register: config_moh_sounds
+  changed_when: config_moh_sounds.stdout != "OK"
