@@ -17,6 +17,9 @@
         
         # pauses
         mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "UPDATE jos_cm_pausereason SET translation=pausereason WHERE translation IS NULL;"
+
+        # disable components jos_menu
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "UPDATE jos_menu SET published = 0 WHERE alias IN ('conf-agents', 'conf-extensions', 'conf-users');"
          
       else
         echo "OK"
