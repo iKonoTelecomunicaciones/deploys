@@ -61,11 +61,11 @@
   register: install_openssl
   when: openssl_version.stdout is not match("OpenSSL 1.1.1d.*")
 
-- name: "Debuging OpenSSL version"
-  debug: 
-    msg: The OpenSSL version is ({{ openssl_version.stdout }}).
-    verbosity: 1
-  when: install_openssl is skipped
+# - name: "Debuging OpenSSL version"
+#   debug: 
+#     msg: The OpenSSL version is ({{ openssl_version.stdout }}).
+#     verbosity: 1
+#   when: install_openssl is skipped
 
 - name: "Checking python version"
   shell: if [[ -e /usr/local/bin/python3 ]];then python3 --version; fi
@@ -82,7 +82,8 @@
   shell: 
     cmd: |
       # make clean && make distclean
-      # yum install -y centos-release-scl devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gdb-plugin devtoolset-9-gcc-gfortran devtoolset-9-gcc-plugin-devel
+      # yum install -y centos-release-scl 
+      # yum install -y devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gdb-plugin devtoolset-9-gcc-gfortran devtoolset-9-gcc-plugin-devel
       # source scl_source enable devtoolset-9
       ./configure --enable-optimizations --with-ensurepip=install
       make -j 2
@@ -93,14 +94,14 @@
       python3.8 -c "print ('hello world')"
     chdir: /usr/local/src/python/Python-3.8.3/
   register: install_python
-  failed_when: install_python.stdout != "hello world"
+  #failed_when: install_python.stdout != "hello world"
   when: python_version.stdout is not match("Python 3.8.*")
 
-- name: "Debuging Python version"
-  debug: 
-    msg: The Python3 version is ({{ python_version.stdout }}).
-    verbosity: 1
-  when: install_python is skipped
+# - name: "Debuging Python version"
+#   debug: 
+#     msg: The Python3 version is ({{ python_version.stdout }}).
+#     verbosity: 1
+#   when: install_python is skipped
 
 - name: "Upgrade pip3.8 package manager"
   shell:
