@@ -11,18 +11,6 @@
   delegate_to: "{{ inventory_hostname }}"
   register: cmrecording_backup
 
-# - name: "Update cmrecording sources"
-#   subversion:
-#     repo: http://dev.ikono.com.co/svn/scripts/recoding-info/trunk
-#     dest: /usr/local/src/scripts/recording-info-trunk
-#     username: "{{ svn_username }}"
-#     password: "{{ svn_password }}"
-#     checkout: yes
-#     update: yes
-#     switch: no
-#     force: no
-#   register: cmrecording_update
-
 - name: "Update monitor-recording-trunk and extensions core"
   shell:
     cmd: |
@@ -41,7 +29,8 @@
       else
         cd /usr/local/src/scripts/;
         svn co --username {{ svn_username }} --password {{ svn_password }} http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/ monitor-recording-trunk/;
-        unlink monitor-recording && ln -s monitor-recording-trunk/ monitor-recording;
+        unlink monitor-recording;
+        ln -s monitor-recording-trunk/ monitor-recording;
         ls -l monitor-recording;
       fi
       
@@ -68,20 +57,7 @@
 
       asterisk -rx "module reload app_queue.so"
       asterisk -rx "dialplan reload"
-    chdir: /usr/local/src/scripts/monitor-recording-trunk
-
-# - name: "Update cmrecording sources"
-#   subversion:
-#     repo: http://dev.ikono.com.co/svn/scripts/recoding-info/trunk
-#     dest: /usr/local/src/scripts/recording-info-trunk
-#     username: "{{ svn_username }}"
-#     password: "{{ svn_password }}"
-#     checkout: yes
-#     update: yes
-#     switch: no
-#     force: no
-#   register: cmrecording_update
-
+    
 - name: "Update and Install cmrecording and AGI monitor-args from sources"
   shell: 
     cmd: |      
@@ -174,8 +150,7 @@
       s/\(USE_CTI'][ ]*=[ ]*\).*/\1${USE_CTI}/g
       " monitor-args.py
       grep -E "$HOST|python" monitor-args.py
-      asterisk -rx "dialplan reload";
-    chdir: /usr/local/src/scripts/recording-info-trunk
+      asterisk -rx "dialplan reload";    
   register: cmrecording_install
   #when: cmrecording_update is changed
 
@@ -211,21 +186,10 @@
   vars: 
     timeout: 1800 # 1800 seconds, 30 min
   failed_when: recording_log.stderr != ""
+  ignore_errors: True
   #when: cmrecording_install is changed
 
 - name: "Debug new recording"
   debug:
     msg: "{{ recording_log.stdout_lines }}"
   #when: cmrecording_install is changed
-
-# - name: "Validate cmrecording updated"
-#   shell:
-#     cmd: |
-#       if [[ -e /usr/local/lib/python2.7/site-packages/recording/ ]]; then
-#         grep "if self.with_tags and tags:" /usr/local/lib/python2.7/site-packages/recording/db.py
-#       elif [[ -e /usr/lib/python2.7/site-packages/recording/ ]]; then
-#         grep "if self.with_tags and tags:" /usr/lib/python2.7/site-packages/recording/db.py
-#       fi
-#   register: cmrecording_version
-#   failed_when: cmrecording_version.stdout == ""
-#   changed_when: False
