@@ -20,7 +20,10 @@
 
         # disable components jos_menu
         mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "UPDATE jos_menu SET published = 0 WHERE alias IN ('conf-agents', 'conf-extensions', 'conf-users');"
-         
+
+        # set default columns
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "ALTER TABLE jos_cm_campaign ALTER column active SET DEFAULT 1; ALTER TABLE jos_cm_subcampaign ALTER column active SET DEFAULT 1; ALTER TABLE jos_cm_queue ALTER column active SET DEFAULT 1;"
+        
       else
         echo "OK"
       fi
