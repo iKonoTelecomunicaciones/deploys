@@ -1,0 +1,47 @@
+- name: "Config default port for nginx"
+  shell:
+    cmd: | 
+      if [[ $(grep "9000" /etc/nginx/conf.d/frontend.conf) && $(grep "Listen 80" /etc/httpd/conf/httpd.conf) ]]; then
+
+        # default port for nginx
+        sed -i "s/9000/80/g" /etc/nginx/conf.d/frontend.conf
+        
+        # 9000 port for apache
+        sed -i "s/Listen 80/Listen 9000/g" /etc/httpd/conf/httpd.conf
+
+        service httpd stop
+        service nginx restart
+        service httpd start
+        
+      elif [[ ! $(grep "80" /etc/nginx/conf.d/frontend.conf) || ! $(grep "Listen 9000" /etc/httpd/conf/httpd.conf) ]]; then  
+        echo "Validar puertos"
+      else
+        echo "OK"
+      fi
+  register: config_default_nginx
+  failed_when: config_default_nginx.stdout == "Validar puertos"
+  changed_when: config_default_nginx.stdout != "OK"
+  ignore_errors: true
+
+- name: "Update recording values in clients to ip_mapping"
+  shell:
+    cmd: |
+      cd /etc/ikono/
+      if [[ $(jq '.client[].recordings.port' config.json | grep -v 8000) ]]; then
+        for key in $(jq '.client[].tally.host' config.json); do 
+          /bin/cp -v config.json /tmp/config.json.tmp
+          cat /tmp/config.json.tmp | jq -r ".client[$key].recordings |= {\"host\": $key, \"port\": \"8000\"}" | tee config.json
+        done
+        if [[ ! $(jq '.' /etc/ikono/config.json) ]]; then
+          svn revert config.json
+          echo "Archivo vacio, se revierte el cambio"
+          exit 1
+        fi
+      elif [[ $(svn st config.json) && ! $(grep cti_api config.json) ]]; then
+        echo "Tiene cambios"
+      else
+        echo "OK"
+      fi
+  register: add_config_ip_mapping
+  failed_when: add_config_ip_mapping.stdout == "Tiene cambios"
+  changed_when: add_config_ip_mapping.stdout != "OK"
