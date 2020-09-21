@@ -81,16 +81,21 @@
 - name: "Install python from sources"
   shell: 
     cmd: |
-      # make clean && make distclean
-      # yum install -y centos-release-scl 
-      # yum install -y devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gdb-plugin devtoolset-9-gcc-gfortran devtoolset-9-gcc-plugin-devel
-      # source scl_source enable devtoolset-9
+      cd /usr/local/src/python/Python-3.8.3/
+      if [[ ! $(lsb_release -sr) < 7 ]]; then
+        make clean && make distclean
+        yum install -y centos-release-scl 
+        yum install -y devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gdb-plugin devtoolset-9-gcc-gfortran devtoolset-9-gcc-plugin-devel
+        source scl_source enable devtoolset-9
+      fi
       ./configure --enable-optimizations --with-ensurepip=install
       make -j 2
       make altinstall
       cd /usr/local/bin/
       ln -s python3.8 python3
-      # sed -i.$(date +"%s") "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-SCLo-scl.repo /etc/yum.repos.d/CentOS-SCLo-scl-rh.repo
+      if [[ ! $(lsb_release -sr) < 7 ]]; then
+        sed -i.$(date +"%s") "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-SCLo-scl.repo /etc/yum.repos.d/CentOS-SCLo-scl-rh.repo
+      fi
       python3.8 -c "print ('hello world')"
     chdir: /usr/local/src/python/Python-3.8.3/
   register: install_python
@@ -128,7 +133,7 @@
 - name: "Install virtualenvwrapper"
   shell: 
     cmd: |
-      if [[ ! $(updatedb && locate virtualenvwrapper) ]]; then
+      if [[ ! $(updatedb --prunepaths /var/spool/asterisk/monitor-mp3/ && locate virtualenvwrapper) ]]; then
         pip3.8 install virtualenvwrapper
       else
         echo "OK"
@@ -139,7 +144,7 @@
 - name: "Install supervisor"
   shell: 
     cmd: |
-      if [[ ! $(updatedb && locate supervisord) ]]; then
+      if [[ ! $(updatedb --prunepaths /var/spool/asterisk/monitor-mp3/ && locate supervisord) ]]; then
         if [[ $(lsb_release -sr) < 7 ]]; then
           pip3.8 install supervisor
           cd /usr/local/bin/
