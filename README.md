@@ -18,7 +18,6 @@ When choosing a control node, bear in mind that any management system benefits f
 
 On the managed nodes, you need a way to communicate, which is normally SSH. By default this uses SFTP. If that’s not available, you can switch to SCP in ansible.cfg. You also need Python 2 (version 2.6 or later) or Python 3 (version 3.5 or later).
 
-
 Example Playbook
 ----------------
 
