@@ -85,7 +85,7 @@
         echo -e "\nEl recording no esta en el trunk: $(svn info | grep URL)"; 
         exit 1;
       fi
-      if [[ $(grep TAGS * -r | wc -l) != 2 ]]; then
+      if [[ $(grep TAGS * -r | wc -l) < 2 ]]; then
         echo -e "\nValidar tags en /usr/local/src/scripts/recording-info-trunk";
         exit 1;
       fi
