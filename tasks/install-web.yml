@@ -143,9 +143,9 @@
         RELOGIN_AFTER_SAVE=$(if [[ $(get_data relogin_after_save) == "YES" ]];then echo "True"; else echo "False";fi)
 
         component="com_agents" 
-        ASTERISK_HOST=$(if [[ $(get_data asterisk_host) ]];then get_data asterisk_host; else echo 'localhost';fi)
+        ASTERISK_HOST=$(if [[ $(get_data asterisk_host) && ! -e /etc/asterisk/ ]];then get_data asterisk_host; else echo 'localhost';fi)
         ASTERISK_HOST_SSH_PORT=$(if [[ $(get_data ssh_port) ]];then get_data ssh_port; else echo 22;fi)
-        RECORDINGS_HOST=$(if [[ $(get_data asterisk_host) ]];then get_data asterisk_host; else echo 'localhost';fi)
+        RECORDINGS_HOST=$(if [[ $(get_data asterisk_host) && ! -e /etc/asterisk/ ]];then get_data asterisk_host; else echo 'localhost';fi)
         RECORDINGS_SSH_PORT=$(if [[ $(get_data ssh_port) ]];then get_data ssh_port; else echo 22;fi)
 
         component="com_devices"
