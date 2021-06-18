@@ -14,12 +14,16 @@
 - name: "Update monitor-recording-trunk and extensions core"
   shell:
     cmd: |
+
+      USER={{ svn_username }}
+      PASSWORD={{ svn_password }}
+
       # Monitor-recording
       echo -e "\n>> update monitor-recording trunk\n";
       if [[ -e /usr/local/src/scripts/monitor-recording-trunk/ ]]; then
         cd /usr/local/src/scripts/monitor-recording-trunk/;
         if [[ $(svn st * | grep -v "?") == "" ]]; then
-          svn sw --username {{ svn_username }} --password {{ svn_password }} http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/;
+          svn sw --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/;
           svn info | grep -iE "url|rev";
         else
           echo -e "\nHay cambios en /usr/local/src/scripts/monitor-recording-trunk/";
@@ -28,7 +32,7 @@
         fi
       else
         cd /usr/local/src/scripts/;
-        svn co --username {{ svn_username }} --password {{ svn_password }} http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/ monitor-recording-trunk/;
+        svn co --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/ monitor-recording-trunk/;
         unlink monitor-recording;
         ln -s monitor-recording-trunk/ monitor-recording;
         ls -l monitor-recording;
@@ -41,7 +45,7 @@
       fi
       cd /etc/asterisk;
       grep "SEND_STARTCALL_EVENT=True" custom/autentication/globals.conf;
-      svn co --username {{ svn_username }} --password {{ svn_password }} http://dev.ikono.com.co/svn/configuracion/extensions/core/tags/2.11 extensions-2.11;
+      svn co --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/configuracion/extensions/core/tags/2.11 extensions-2.11;
       unlink extensions && ln -s extensions-2.11/ extensions;
       ls -l extensions;
 
@@ -61,12 +65,16 @@
 - name: "Update and Install cmrecording and AGI monitor-args from sources"
   shell: 
     cmd: |      
+    
+      USER={{ svn_username }}
+      PASSWORD={{ svn_password }}
+
       # Actualizar el cmrecording
       echo -e "\n>> update cmrecording\n";
       if [ -e /usr/local/src/scripts/recording-info-trunk ]; then
         cd /usr/local/src/scripts/recording-info-trunk;
         if [[ $(svn st * | grep -v "?") == "" ]]; then
-          svn update --username {{ svn_username }} --password {{ svn_password }};
+          svn update --username $USER --password $PASSWORD;
           svn info | grep -iE "url|rev";
         else
           echo -e "\nHay cambios en /usr/local/src/scripts/recording-info-trunk";
@@ -75,7 +83,7 @@
         fi
       else
         cd /usr/local/src/scripts/
-        svn co --username {{ svn_username }} --password {{ svn_password }} http://dev.ikono.com.co/svn/scripts/recoding-info/trunk recording-info-trunk/
+        svn co --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/scripts/recoding-info/trunk recording-info-trunk/
         unlink recording-info && ln -s recording-info-trunk/ recording-info
         ls -l recording-info
         cd /usr/local/src/scripts/recording-info-trunk
@@ -127,13 +135,13 @@
       if [ -e /usr/local/src/agis/agi-monitor-args-trunk ]; then
         cd /usr/local/src/agis/agi-monitor-args-trunk;
         if [[ $(svn st * | grep -v "?") == "" ]]; then
-          svn update --username {{ svn_username }} --password {{ svn_password }};
+          svn update --username $USER --password $PASSWORD;
           svn info | grep -iE "url|rev";
         else
           echo -e "\nHay cambios en /usr/local/src/agis/agi-monitor-args-trunk";
           svn diff /usr/local/src/agis/agi-monitor-args-trunk | tee -a /tmp/agi-monitor-args-trunk_diff.log;
           svn revert monitor-args.py;
-          svn update --username {{ svn_username }} --password {{ svn_password }};
+          svn update --username $USER --password $PASSWORD;
           svn info | grep -iE "url|rev";
         fi
       else
