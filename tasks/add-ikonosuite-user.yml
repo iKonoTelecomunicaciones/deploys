@@ -28,7 +28,7 @@
     validate: /usr/sbin/visudo -cf %s
     backup: yes
     create: yes
-  when: "'voice' in group_names"
+  when: "'Voice' in group_names"
 
 - name: "Copy SSH-key to voice server"
   shell: 
@@ -48,4 +48,4 @@
       fi
   register: add_key
   changed_when: add_key.stdout != 'OK'
-  when: "'apps' in group_names"
+  when: "'Apps' in group_names"
