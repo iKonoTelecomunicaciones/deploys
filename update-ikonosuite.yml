@@ -1,112 +1,112 @@
 ---
 - name: "Update iKonoSuite"
-  hosts: all:!B2BUA:!CentOS5:!Skipped:!Migrated
+  hosts: Voice:Apps:!B2BUA:!CentOS5:!Skipped
   tasks:
     # # Update servers
     # - import_tasks: tasks/update-all-packages.yml
 
-    # - import_tasks: tasks/install-packages-required.yml
-    #   when: "'apps' in group_names"
+    - import_tasks: tasks/install-packages-required.yml
+      when: "'Apps' in group_names"
 
-    # # Update services
-    # - import_tasks: tasks/update-database.yml
-    #   when: "'apps' in group_names"
+    # Update services
+    - import_tasks: tasks/update-database.yml
+      when: "'Apps' in group_names"
 
-    # - import_tasks: tasks/update-execs.yml
-    #   when: "'voice' in group_names"
+    - import_tasks: tasks/update-execs.yml
+      when: "'Voice' in group_names"
 
-    # - import_tasks: tasks/update-cmqueuelog.yml
-    #   when: "'voice' in group_names"
+    - import_tasks: tasks/update-cmqueuelog.yml
+      when: "'Voice' in group_names"
 
-    # - import_tasks: tasks/update-cmrecording.yml
-    #   when: "'voice' in group_names"
+    - import_tasks: tasks/update-cmrecording.yml
+      when: "'Voice' in group_names"
 
-    # # Config servers
-    # - import_tasks: tasks/add-ikonosuite-user.yml
+    # Config servers
+    - import_tasks: tasks/add-ikonosuite-user.yml
 
-    # - import_tasks: tasks/dirs-setup.yml
-    #   when: "'voice' in group_names"
+    - import_tasks: tasks/dirs-setup.yml
+      when: "'Voice' in group_names"
     
-    # - import_tasks: tasks/create-virtual-envs.yml
-    #   become: yes
-    #   become_method: su
-    #   become_user: ikono
-    #   when: "'apps' in group_names"
+    - import_tasks: tasks/create-virtual-envs.yml
+      become: yes
+      become_method: su
+      become_user: ikono
+      when: "'Apps' in group_names"
 
-    # # Config ip_mapping
-    # - import_tasks: tasks/config-ip-mapping.yml
-    #   when: "'apps' in group_names"
+    # Config ip_mapping
+    - import_tasks: tasks/config-ip-mapping.yml
+      when: "'Apps' in group_names"
 
-    # # Install Web
-    # - import_tasks: tasks/install-web.yml
-    #   become: yes
-    #   become_method: su
-    #   become_user: ikono
-    #   when: "'apps' in group_names"
+    # Install Web
+    - import_tasks: tasks/install-web.yml
+      become: yes
+      become_method: su
+      become_user: ikono
+      when: "'Apps' in group_names"
     
-    # # Config Database
-    # - import_tasks: tasks/config-database.yml
-    #   when: "'apps' in group_names"
+    # Config Database
+    - import_tasks: tasks/config-database.yml
+      when: "'Apps' in group_names"
 
-    # - import_tasks: tasks/migrations-django.yml
-    #   become: yes
-    #   become_method: su
-    #   become_user: ikono
-    #   when: "'apps' in group_names"
+    - import_tasks: tasks/migrations-django.yml
+      become: yes
+      become_method: su
+      become_user: ikono
+      when: "'Apps' in group_names"
 
-    # # Config Webserver
-    # - import_tasks: tasks/config-webserver.yml
-    #   when: "'apps' in group_names"
+    # Config Webserver
+    - import_tasks: tasks/config-webserver.yml
+      when: "'Apps' in group_names"
 
-    # # Config CTI-API
-    # - import_tasks: tasks/install-cti-api.yml
-    #   when: "'apps' in group_names"
+    # Config CTI-API
+    - import_tasks: tasks/install-cti-api.yml
+      when: "'Apps' in group_names"
 
-    # # Config Services
-    # - import_tasks: tasks/config-services.yml
-    #   when: "'apps' in group_names"
+    # Config Services
+    - import_tasks: tasks/config-services.yml
+      when: "'Apps' in group_names"
 
-    ## # Update repositories # falta validar la nueva configuración con los playbooks
-    ## - import_tasks: tasks/update-cti-api.yml
-    ##   when: "'apps' in group_names"
+    ### Update repositories # falta validar la nueva configuración con los playbooks
+    - import_tasks: tasks/update-cti-api.yml
+      when: "'Apps' in group_names"
     
     - import_tasks: tasks/update-backend.yml
       become: yes
       become_method: su
       become_user: ikono
-      when: "'apps' in group_names"
+      when: "'Apps' in group_names"
       
-    # Migration
-    - import_tasks: tasks/config-sounds.yml
-      when: "'voice' in group_names"
+    # ## Migration
+    # - import_tasks: tasks/config-sounds.yml
+    #   when: "'Voice' in group_names"
 
-    - import_tasks: tasks/copy-sounds.yml
-      become: yes
-      become_method: su
-      become_user: ikono
-      when: "'apps' in group_names"
+    # - import_tasks: tasks/copy-sounds.yml
+    #   become: yes
+    #   become_method: su
+    #   become_user: ikono
+    #   when: "'Apps' in group_names"
 
-    - import_tasks: tasks/config-database-migration.yml
-      when: "'apps' in group_names"
+    # - import_tasks: tasks/config-database-migration.yml
+    #   when: "'Apps' in group_names"
 
-    - import_tasks: tasks/config-users-and-reports.yml
-      become: yes
-      become_method: su
-      become_user: ikono
-      when: "'apps' in group_names"
+    # - import_tasks: tasks/config-users-and-reports.yml
+    #   become: yes
+    #   become_method: su
+    #   become_user: ikono
+    #   when: "'Apps' in group_names"
 
-    - import_tasks: tasks/config-shifts.yml
-      when: "'apps' in group_names"
+    # - import_tasks: tasks/config-shifts.yml
+    #   when: "'Apps' in group_names"
     
-    # NOTA: -e "product_ikono='pbx-call'"
-    - import_tasks: tasks/config-webserver-migration.yml
-      when: "'apps' in group_names"
+    # # NOTA: -e "product_ikono='pbx-call'"
+    # - import_tasks: tasks/config-webserver-migration.yml
+    #   when: "'Apps' in group_names"
 
     # - import_tasks: tasks/config-webserver-ports.yml
-    #   when: "'apps' in group_names"
+    #   when: "'Apps' in group_names"
 
     - import_tasks: tasks/check-services.yml
-      when: "'apps' in group_names"
+      when: "'Apps' in group_names"
 
   handlers: 
     - import_tasks: handlers/supervisorctl.yml
@@ -119,3 +119,4 @@
     - vars/gitlab.yml
     - vars/api.yml
     - vars/django.yml
+    
