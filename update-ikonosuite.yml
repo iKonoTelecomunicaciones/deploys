@@ -66,7 +66,7 @@
     - import_tasks: tasks/config-services.yml
       when: "'Apps' in group_names"
 
-    ### Update repositories # falta validar la nueva configuración con los playbooks
+    ## Update repositories 
     - import_tasks: tasks/update-cti-api.yml
       when: "'Apps' in group_names"
     
