@@ -1,2 +1,2 @@
 .vscode/
-#tasks/add-ssh-authorized-keys.yml
+tasks/add-ssh-authorized-keys.yml
