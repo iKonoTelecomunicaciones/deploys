@@ -34,9 +34,9 @@
           echo "OK"
         fi
       else
-        if [[ $(grep "80 default_server" /etc/nginx/nginx.conf) ]]; then
+        if [[ $(grep "80;" /etc/nginx/nginx.conf) ]]; then
           sed -i.$(date +"%s") "
-          s/80 default_server/8000/g
+          s/80;/8000;/g
           s/user nginx/user ikono/g
           " /etc/nginx/nginx.conf
         else
