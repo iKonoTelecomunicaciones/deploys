@@ -26,6 +26,7 @@
       - jq
       - python-setuptools 
       - git
+      - colordiff
     state: present
 
 - name: "Install php-mysql package from YUM repositories"
