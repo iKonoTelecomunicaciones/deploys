@@ -45,8 +45,8 @@
       fi
       cd /etc/asterisk;
       grep "SEND_STARTCALL_EVENT=True" custom/autentication/globals.conf;
-      svn co --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/configuracion/extensions/core/tags/2.11 extensions-2.11;
-      unlink extensions && ln -s extensions-2.11/ extensions;
+      svn co --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/configuracion/extensions/core/tags/3.0 extensions-3.0;
+      unlink extensions && ln -s extensions-3.0/ extensions;
       ls -l extensions;
 
       cd /etc/asterisk
