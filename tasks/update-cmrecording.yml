@@ -52,7 +52,7 @@
       cd /etc/asterisk
       sed -i "
       s/^\(monitor-type=\).*/\1MixMonitor/g
-      s/;\(monitor-format=\).*/\1alaw\n;monitor-format=gsm|wav|wav49/g
+      s/;\(monitor-format=\).*/\1alaw\n; monitor-format=gsm|wav|wav49/g
       " queues.conf
 
       sed -i "
@@ -183,7 +183,7 @@
       done
       NEWLINE=$(tail -n1 $PWD/recording)
       if [[ $TIMEOUT != 0 ]]; then
-        echo "￼Ready!";
+        echo "Ready!";
         echo $ENDLINE | cut -d'|' -f11;
         echo $NEWLINE | cut -d'|' -f11;
       else
