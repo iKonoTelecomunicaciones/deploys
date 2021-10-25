@@ -22,7 +22,7 @@
       echo -e "\n>> update monitor-recording trunk\n";
       if [[ -e /usr/local/src/scripts/monitor-recording-trunk/ ]]; then
         cd /usr/local/src/scripts/monitor-recording-trunk/;
-        if [[ $(svn st * | grep -v "?") == "" ]]; then
+        if [[ $(svn st * | grep -Ev "?") == "" ]]; then
           svn sw --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/;
           svn info | grep -iE "url|rev";
         else
