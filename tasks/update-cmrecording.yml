@@ -89,7 +89,7 @@
         cd /usr/local/src/scripts/recording-info-trunk
       fi
 
-      if [[ $(svn info . | grep URL) != "URL: http://dev.ikono.com.co/svn/scripts/recoding-info/trunk" ]]; then 
+      if [[ $(svn info . | grep URL) != "URL: https://dev.ikono.com.co/svn/scripts/recoding-info/trunk" ]]; then 
         echo -e "\nEl recording no esta en el trunk: $(svn info | grep URL)"; 
         exit 1;
       fi
