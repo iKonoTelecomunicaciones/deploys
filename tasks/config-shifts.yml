@@ -39,7 +39,7 @@
   shell:
     cmd: |
       if [[ ! $(grep replicate_shift_rules /var/spool/cron/root) ]]; then
-        echo "30 1 * * 1 mysql repqueuelog -u repqueuelog -ponokimysql -e \"CALL replicate_shift_rules();\" &> /dev/null" >> /var/spool/cron/root
+        echo "30 1 * * 1 mysql {{ mysql_db_name }} -u{{ mysql_db_name }} -p{{ mysql_db_password }} -e \"CALL replicate_shift_rules();\" &> /dev/null" >> /var/spool/cron/root
       elif [[ ! -e /var/spool/cron/root ]]; then
         echo "Not found /var/spool/cron/root file"
         exit 1
