@@ -1,6 +1,6 @@
 - name: "Update database-trunk sources"
   subversion:
-    repo: http://dev.ikono.com.co/svn/database/trunk
+    repo: https://dev.ikono.com.co/svn/database/trunk
     dest: /usr/local/src/ikono/database-trunk/
     username: "{{ svn_username }}"
     password: "{{ svn_password }}"

@@ -23,7 +23,7 @@
       if [[ -e /usr/local/src/scripts/monitor-recording-trunk/ ]]; then
         cd /usr/local/src/scripts/monitor-recording-trunk/;
         if [[ $(svn st * | grep -Ev "?") == "" ]]; then
-          svn sw --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/;
+          svn sw --username $USER --password $PASSWORD https://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/;
           svn info | grep -iE "url|rev";
         else
           echo -e "\nHay cambios en /usr/local/src/scripts/monitor-recording-trunk/";
@@ -32,7 +32,7 @@
         fi
       else
         cd /usr/local/src/scripts/;
-        svn co --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/ monitor-recording-trunk/;
+        svn co --username $USER --password $PASSWORD https://dev.ikono.com.co/svn/scripts/ogg-monitor/trunk/ monitor-recording-trunk/;
         unlink monitor-recording;
         ln -s monitor-recording-trunk/ monitor-recording;
         ls -l monitor-recording;
@@ -45,7 +45,7 @@
       fi
       cd /etc/asterisk;
       grep "SEND_STARTCALL_EVENT=True" custom/autentication/globals.conf;
-      svn co --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/configuracion/extensions/core/tags/3.0 extensions-3.0;
+      svn co --username $USER --password $PASSWORD https://dev.ikono.com.co/svn/configuracion/extensions/core/tags/3.0 extensions-3.0;
       unlink extensions && ln -s extensions-3.0/ extensions;
       ls -l extensions;
 
@@ -83,7 +83,7 @@
         fi
       else
         cd /usr/local/src/scripts/
-        svn co --username $USER --password $PASSWORD http://dev.ikono.com.co/svn/scripts/recoding-info/trunk recording-info-trunk/
+        svn co --username $USER --password $PASSWORD https://dev.ikono.com.co/svn/scripts/recoding-info/trunk recording-info-trunk/
         unlink recording-info && ln -s recording-info-trunk/ recording-info
         ls -l recording-info
         cd /usr/local/src/scripts/recording-info-trunk

@@ -5,7 +5,7 @@
 
 - name: "Download provisioner API"
   subversion:
-    repo: http://dev.ikono.com.co/svn/provisioner_api/trunk
+    repo: https://dev.ikono.com.co/svn/provisioner_api/trunk
     dest: /home/ikono/web/provisioner_api
     username: "{{ svn_username }}"
     password: "{{ svn_password }}"

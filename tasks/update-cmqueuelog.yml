@@ -9,7 +9,7 @@
 
 - name: "Update cmqueuelog sources"
   subversion:
-    repo: http://dev.ikono.com.co/svn/queuelog/trunk
+    repo: https://dev.ikono.com.co/svn/queuelog/trunk
     dest: /usr/local/src/ikono/queuelog-trunk
     username: "{{ svn_username }}"
     password: "{{ svn_password }}"

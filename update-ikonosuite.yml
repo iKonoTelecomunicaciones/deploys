@@ -76,34 +76,35 @@
       become_user: ikono
       when: "'Apps' in group_names"
       
-    # ## Migration
-    # - import_tasks: tasks/config-sounds.yml
-    #   when: "'Voice' in group_names"
+    ### Migration
+    #- import_tasks: tasks/config-sounds.yml
+    #  when: "'Voice' in group_names"
 
-    # - import_tasks: tasks/copy-sounds.yml
-    #   become: yes
-    #   become_method: su
-    #   become_user: ikono
-    #   when: "'Apps' in group_names"
+    #- import_tasks: tasks/copy-sounds.yml
+    #  become: yes
+    #  become_method: su
+    #  become_user: ikono
+    #  when: "'Apps' in group_names"
 
-    # - import_tasks: tasks/config-database-migration.yml
-    #   when: "'Apps' in group_names"
+    #- import_tasks: tasks/config-database-migration.yml
+    #  when: "'Apps' in group_names"
 
-    # - import_tasks: tasks/config-users-and-reports.yml
-    #   become: yes
-    #   become_method: su
-    #   become_user: ikono
-    #   when: "'Apps' in group_names"
+    #- import_tasks: tasks/config-users-and-reports.yml
+    #  become: yes
+    #  become_method: su
+    #  become_user: ikono
+    #  when: "'Apps' in group_names"
 
-    # - import_tasks: tasks/config-shifts.yml
-    #   when: "'Apps' in group_names"
-    
-    # # NOTA: -e "product_ikono='pbx-call'"
-    # - import_tasks: tasks/config-webserver-migration.yml
-    #   when: "'Apps' in group_names"
+    #- import_tasks: tasks/config-shifts.yml
+    #  when: "'Apps' in group_names"
+    #
+    ## NOTA: -e "product_ikono='pbx-call'"
+    #- import_tasks: tasks/config-webserver-migration.yml
+    #  when: "'Apps' in group_names"
 
-    # - import_tasks: tasks/config-webserver-ports.yml
-    #   when: "'Apps' in group_names"
+    ##- import_tasks: tasks/config-webserver-ports.yml
+    ##  when: "'Apps' in group_names"
+    ### End Migration
 
     - import_tasks: tasks/check-services.yml
       when: "'Apps' in group_names"
