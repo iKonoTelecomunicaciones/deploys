@@ -62,21 +62,29 @@
     - import_tasks: tasks/install-cti-api.yml
       when: "'Apps' in group_names"
 
+    # Add docker networks
+    - import_tasks: tasks/config-docker-networks.yml
+      when: "'Voice' in group_names"
+
     # Config Services
     - import_tasks: tasks/config-services.yml
       when: "'Apps' in group_names"
 
-    ## Update repositories 
+    # Update repositories
     - import_tasks: tasks/update-cti-api.yml
       when: "'Apps' in group_names"
     
+    ## Start docker and cti-api
+    #- import_tasks: tasks/start-services-cti-api.yml
+    #  when: "'Apps' in group_names"
+
     - import_tasks: tasks/update-backend.yml
       become: yes
       become_method: su
       become_user: ikono
       when: "'Apps' in group_names"
       
-    ### Migration
+    ## Migration new plataform
     #- import_tasks: tasks/config-sounds.yml
     #  when: "'Voice' in group_names"
 
@@ -104,10 +112,13 @@
 
     ##- import_tasks: tasks/config-webserver-ports.yml
     ##  when: "'Apps' in group_names"
-    ### End Migration
+    ### End Migration new plataform
 
     - import_tasks: tasks/check-services.yml
       when: "'Apps' in group_names"
+
+    - import_tasks: tasks/download-ikono-suite-backup.yml
+    #  when: "'Voice' in group_names"
 
   handlers: 
     - import_tasks: handlers/supervisorctl.yml
@@ -120,4 +131,4 @@
     - vars/gitlab.yml
     - vars/api.yml
     - vars/django.yml
-    
+    - vars/directories.yml

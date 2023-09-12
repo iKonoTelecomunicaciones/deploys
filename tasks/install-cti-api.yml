@@ -9,10 +9,10 @@
       - git
     state: present
 
-- name: "Start service docker"
-  service:
-    name: docker
-    state: started
+#- name: "Start service docker"
+#  service:
+#    name: docker
+#    state: started
 
 #- name: "Create virtualenv directory"
 #  file:
@@ -31,6 +31,10 @@
   stat:
     path: "{{ iKonoPath['docker'] }}/cti-api"
   register: ctiapi_stat
+
+- name: "Down proyect if exists"
+  command: docker-compose -f {{ iKonoPath['docker'] }}/cti-api/docker-compose.yml down
+  when: ctiapi_stat.stat.exists
 
 - name: "Move cti-api to cti-api-old if exists"
   command: mv {{ iKonoPath['docker'] }}/cti-api {{ iKonoPath['docker'] }}/cti-api-old
@@ -140,6 +144,8 @@
       if [[ $(grep -E "xxx|db_passwd" local_settings.py) ]]; then
         HOST=$(grep "host" /etc/cmgateway/cmservers.ini | cut -d':' -f2 | sed "s/ //g")
         SECRET=$(grep "secret" /etc/cmgateway/cmservers.ini | cut -d':' -f2 | sed "s/ //g")
+        CTI_API_PASS=$(mkpasswd -l 20 -s 0)
+        HOST_APPS=$(ifconfig | grep ${HOST%.*} | cut -d ' ' -f10)
         
         sed -i "
         s/\(^WEB_PORT = \).*/\18050/g
@@ -153,10 +159,10 @@
         " local_settings.py
 
         sed -i "
-        s/password/{{ cti_api_password }}/g
+        s/password/${CTI_API_PASS}/g
         " api_rest.passwd        
         
-        sed -i "0,/localhost/ s//${HOST}/" local_settings.py
+        sed -i "0,/localhost/ s//${HOST_APPS}/" local_settings.py
       else
         echo "OK"
       fi
@@ -196,6 +202,7 @@
         # modify structure of the jos_cm_agent
         mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "ALTER TABLE jos_cm_agent ALTER COLUMN active SET DEFAULT 1;"
 
+        # NOTE: ONLY OLD PLATFORM
         # update active in jos_cm_agent
         mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "UPDATE jos_cm_agent SET active=1;"
 
@@ -204,3 +211,19 @@
       fi
   register: modify_column_active_db
   changed_when: modify_column_active_db.stdout != "OK"
+
+- name: "Create column active and external_userid if not exists"
+  shell:
+    cmd: |
+      if [[ $(mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} -e "DESCRIBE jos_cm_agent;" | grep -e "active" -e "external_userid" | wc -l) == 0 ]]; then
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "ALTER TABLE jos_cm_agent ADD COLUMN active tinyint(1) NOT NULL DEFAULT 1;"
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "ALTER TABLE jos_cm_agent ADD COLUMN external_userid varchar(255);"
+      elif [[ ! $(mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} -e "DESCRIBE jos_cm_agent;" | grep -e "active")  ]]; then
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "ALTER TABLE jos_cm_agent ADD COLUMN active tinyint(1) NOT NULL DEFAULT 1;"
+      elif [[ ! $(mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} -e "DESCRIBE jos_cm_agent;" | grep -e "external_userid")  ]]; then
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "ALTER TABLE jos_cm_agent ADD COLUMN external_userid varchar(255);"
+      else
+        echo "OK"
+      fi
+  register: create_columns__db
+  changed_when: create_columns__db.stdout != "OK"
