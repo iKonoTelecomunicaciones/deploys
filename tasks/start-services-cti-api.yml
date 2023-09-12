@@ -1,0 +1,10 @@
+- name: "Start cti-api with docker compose"
+  shell:
+    cmd: |
+      if [[ ! $( docker ps -a | grep cti-api ) ]]; then
+        /usr/local/bin/docker-compose -f {{ iKonoPath['docker'] }}/cti-api/docker-compose.yml up -d
+      else
+        echo "OK"
+      fi
+  register: config_git_cti_api
+  changed_when: config_git_cti_api.stdout != "OK"

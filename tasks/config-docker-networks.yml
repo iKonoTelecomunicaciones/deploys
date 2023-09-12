@@ -1,0 +1,19 @@
+- name: "Add docker networks"
+  shell:
+    cmd: |
+      SUBNET_CTIAPI=$(sed -n '/^networks:/,/subnet:/p' {{ iKonoPath['docker'] }}/cti-api/docker-compose.yml | grep subnet | sed "s/ //g" | cut -d ':' -f2)
+      NW_CTIAPI='172.31.255.0/255.255.255.0'
+      NW_DOCKER='172.17.0.0/255.255.0.0'
+
+      if [[ ! $( grep ${NW_CTIAPI} /etc/asterisk/manager.conf ) && ! $( grep ${NW_DOCKER} /etc/asterisk/manager.conf ) ]]; then
+        sed -i "s#deny=.*#&\npermit=${NW_CTIAPI}#" /etc/asterisk/manager.conf
+        sed -i "s#permit=${NW_CTIAPI}.*#&\npermit=${NW_DOCKER}#" /etc/asterisk/manager.conf
+      elif [[ ! $( grep ${NW_CTIAPI} /etc/asterisk/manager.conf ) ]]; then
+        sed -i "s#deny=.*#&\npermit=${NW_CTIAPI}#" /etc/asterisk/manager.conf
+      elif [[ ! $( grep ${NW_DOCKER} /etc/asterisk/manager.conf ) ]]; then
+        sed -i "s#permit=${NW_CTIAPI}.*#&\npermit=${NW_DOCKER}#" /etc/asterisk/manager.conf
+      else
+        echo "OK"
+      fi
+  register: add_docker_networks
+  changed_when: add_docker_networks.stdout != "OK"

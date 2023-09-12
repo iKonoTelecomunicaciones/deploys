@@ -9,110 +9,124 @@
       - git
     state: present
 
-- name: "Create virtualenv directory for cti-api"
-  file:
-    path: "~/.envs"
-    state: directory
+- name: "Start service docker"
+  service:
+    name: docker
+    state: started
 
-- name: "Configure virtualenv bashrc file"
-  blockinfile:
-    path: "/root/.bashrc"
-    block: |
-      export WORKON_HOME=~/.envs
-      export VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python3.8
-      source /usr/local/bin/virtualenvwrapper.sh
+#- name: "Create virtualenv directory"
+#  file:
+#    path: "~/.envs"
+#    state: directory
+#
+#- name: "Configure virtualenv bashrc file"
+#  blockinfile:
+#    path: "/root/.bashrc"
+#    block: |
+#      export WORKON_HOME=~/.envs
+#      export VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python3.8
+#      source /usr/local/bin/virtualenvwrapper.sh
+
+- name: "State check directory cti-api"
+  stat:
+    path: "{{ iKonoPath['docker'] }}/cti-api"
+  register: ctiapi_stat
+
+- name: "Move cti-api to cti-api-old if exists"
+  command: mv {{ iKonoPath['docker'] }}/cti-api {{ iKonoPath['docker'] }}/cti-api-old
+  when: ctiapi_stat.stat.exists
 
 - name: "Clone cti-api proyect" 
   git: 
     repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/cti-api.git"
-    dest: /usr/local/src/ikono/cti-api
+    dest: "{{ iKonoPath['docker'] }}/cti-api"
     clone: yes
     update: no
 
 - name: "Config git for cti-api"
   shell:
     cmd: |
-      if [[ $( grep {{ git_password }} /usr/local/src/ikono/cti-api/.git/config ) ]]; then 
-        sed -i "s/:{{ git_password }}//g" /usr/local/src/ikono/cti-api/.git/config
+      if [[ $( grep {{ git_password }} {{ iKonoPath['docker'] }}/cti-api/.git/config ) ]]; then
+        sed -i "s/:{{ git_password }}//g" {{ iKonoPath['docker'] }}/cti-api/.git/config
       else
         echo "OK"
       fi
   register: config_git_cti_api
   changed_when: config_git_cti_api.stdout != "OK"
 
-- name: "Create virtualenv for cti-api"
-  shell:
-    cmd: |
-      source /root/.bashrc
-      if [[ ! -e /root/.envs/cti-api/ ]]; then 
-        mkvirtualenv cti-api --python=/usr/local/bin/python3.8
-      else
-        echo "OK"
-      fi
-  register: create_virtualenv_cti_api
-  changed_when: create_virtualenv_cti_api.stdout != "OK"
+#- name: "Create virtualenv for cti-api"
+#  shell:
+#    cmd: |
+#      source /root/.bashrc
+#      if [[ ! -e /root/.envs/cti-api/ ]]; then
+#        mkvirtualenv cti-api --python=/usr/local/bin/python3.8
+#      else
+#        echo "OK"
+#      fi
+#  register: create_virtualenv_cti_api
+#  changed_when: create_virtualenv_cti_api.stdout != "OK"
 
-- name: "Upgrade pip package manager for cti-api virtualenv"
-  shell:
-    cmd: | 
-      source /root/.envs/cti-api/bin/activate
-      PIPVER=$(pip list --outdated | grep pip | awk '{print $2}')
-      if [[ $(pip list --outdated | grep pip | awk '{print $3}') > $PIPVER ]]; then
-        python -m pip install --upgrade pip
-      else
-        echo "OK"
-      fi
-  register: upgrade_pip
-  changed_when: upgrade_pip.stdout != "OK"
+#- name: "Upgrade pip package manager for cti-api virtualenv"
+#  shell:
+#    cmd: |
+#      source /root/.envs/cti-api/bin/activate
+#      PIPVER=$(pip list --outdated | grep pip | awk '{print $2}')
+#      if [[ $(pip list --outdated | grep pip | awk '{print $3}') > $PIPVER ]]; then
+#        python -m pip install --upgrade pip
+#      else
+#        echo "OK"
+#      fi
+#  register: upgrade_pip
+#  changed_when: upgrade_pip.stdout != "OK"
 
-- name: "Pip install requests for cti-api"
-  pip:
-    name: requests
-    virtualenv: /root/.envs/cti-api/
-    state: present
+#- name: "Pip install requests for cti-api"
+#  pip:
+#    name: requests
+#    virtualenv: /root/.envs/cti-api/
+#    state: present
 
-- name: "Pip install twisted for cti-api"
-  pip:
-    name: https://github.com/twisted/twisted/archive/twisted-20.3.0.zip
-    virtualenv: /root/.envs/cti-api/
-    state: present
+#- name: "Pip install twisted for cti-api"
+#  pip:
+#    name: https://github.com/twisted/twisted/archive/twisted-20.3.0.zip
+#    virtualenv: /root/.envs/cti-api/
+#    state: present
 
-- name: "Pip install requeriments.txt for cti-api virtualenv"
-  pip:
-    requirements: /usr/local/src/ikono/cti-api/requirements.txt
-    virtualenv: /root/.envs/cti-api/
-    state: present
+#- name: "Pip install requeriments.txt for cti-api virtualenv"
+#  pip:
+#    requirements: {{ iKonoPath['docker'] }}/cti-api/requirements.txt
+#    virtualenv: /root/.envs/cti-api/
+#    state: present
 
-- name: "Copy config cti-api file for supervisor"
-  copy:
-    src: files/supervisord_cti_api.ini
-    dest: /etc/supervisord.d/cti_api.ini
-    force: no
+#- name: "Copy config cti-api file for supervisor"
+#  copy:
+#    src: files/supervisord_cti_api.ini
+#    dest: /etc/supervisord.d/cti_api.ini
+#    force: no
 
-- name: "Create logs dir for cti-api"
-  file:
-    path: /usr/local/src/ikono/cti-api/logs
-    state: directory
+#- name: "Create logs dir for cti-api"
+#  file:
+#    path: {{ iKonoPath['docker'] }}/cti-api/logs
+#    state: directory
 
-- name: "Create logs files for cti-api"
-  file:
-    path: "{{ item }}"
-    state: touch
-  loop: 
-    - /usr/local/src/ikono/cti-api/logs/supervisor_out.log
-    - /usr/local/src/ikono/cti-api/logs/supervisor_err.log
+#- name: "Create logs files for cti-api"
+#  file:
+#    path: "{{ item }}"
+#    state: touch
+#  loop:
+#    - {{ iKonoPath['docker'] }}/cti-api/logs/supervisor_out.log
+#    - {{ iKonoPath['docker'] }}/cti-api/logs/supervisor_err.log
 
 - name: "Create config files for cti-api"
   shell:
     cmd: |
-      cd /usr/local/src/ikono/cti-api/config
+      cd {{ iKonoPath['docker'] }}/cti-api
       if [[ ! -e api_rest.passwd && ! -e local_settings.py ]]; then
-        cp -v api_rest.passwd.template api_rest.passwd
-        cp -v local_settings.py.template local_settings.py
+        cp -v cti-api/src/config/api_rest.passwd.template api_rest.passwd
+        cp -v cti-api/src/config/local_settings.py.template local_settings.py
       elif [[ ! -e api_rest.passwd ]]; then
-        cp -v api_rest.passwd.template api_rest.passwd
+        cp -v cti-api/src/config/api_rest.passwd.template api_rest.passwd
       elif [[ ! -e local_settings.py ]]; then
-        cp -v local_settings.py.template local_settings.py
+        cp -v cti-api/src/config/local_settings.py.template local_settings.py
       else
         echo "OK"
       fi
@@ -122,7 +136,7 @@
 - name: "Config file local_settings for cti-api"
   shell:
     cmd: |
-      cd /usr/local/src/ikono/cti-api/config
+      cd {{ iKonoPath['docker'] }}/cti-api
       if [[ $(grep -E "xxx|db_passwd" local_settings.py) ]]; then
         HOST=$(grep "host" /etc/cmgateway/cmservers.ini | cut -d':' -f2 | sed "s/ //g")
         SECRET=$(grep "secret" /etc/cmgateway/cmservers.ini | cut -d':' -f2 | sed "s/ //g")
@@ -141,8 +155,52 @@
         sed -i "
         s/password/{{ cti_api_password }}/g
         " api_rest.passwd        
+        
+        sed -i "0,/localhost/ s//${HOST}/" local_settings.py
       else
         echo "OK"
       fi
   register: config_files_cti_api
   changed_when: config_files_cti_api.stdout != "OK"
+
+- name: "Create user in database for cti-api"
+  shell:
+    cmd: |
+      cd {{ iKonoPath['docker'] }}/cti-api
+      SUBNET_CTIAPI=$(sed -n '/^networks:/,/subnet:/p' docker-compose.yml | grep subnet | sed "s/ //g" | cut -d ':' -f2)
+      NW_CTIAPI=$(ipcalc -n  ${SUBNET_CTIAPI} | cut -d '=' -f2)
+      MASK_CTIAPI=$(ipcalc -m  ${SUBNET_CTIAPI} | cut -d '=' -f2)
+      USER_DB=$(sed -n '/DB_CONNECTION_DATA/,/}/p' local_settings.py | grep "'user':" | awk -F "[']" {'print $4'})
+      PASS_DB=$(sed -n '/DB_CONNECTION_DATA/,/}/p' local_settings.py | grep "'passwd':" | awk -F "[']" {'print $4'})
+
+      if [[ ! $(mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} -e "select user,host from mysql.user;" | grep "${NW_CTIAPI}/${MASK_CTIAPI}" | grep ${USER_DB}) ]]; then
+        mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "GRANT ALL PRIVILEGES ON repqueuelog.* TO ${USER_DB}@'${NW_CTIAPI}/${MASK_CTIAPI}' IDENTIFIED BY '${PASS_DB}';"
+        mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "GRANT ALL PRIVILEGES ON repqueuelog.* TO ${USER_DB}@'localhost' IDENTIFIED BY '${PASS_DB}';"
+      else
+        echo "OK"
+      fi
+  register: create_user_database_cti_api
+  changed_when: create_user_database_cti_api.stdout != "OK"
+
+- name: "Creating a file .env"
+  copy:
+    dest: "{{ iKonoPath['docker'] }}/cti-api/.env"
+    content: |
+      API_PORT=8050
+
+- name: "Modify and update column active in new cti"
+  shell:
+    cmd: |
+      if [[ $(mysql repqueuelog -u{{ mysql_username }} -p{{ mysql_password }} -e "DESCRIBE jos_cm_agent;" | grep active) ]]; then
+
+        # modify structure of the jos_cm_agent
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "ALTER TABLE jos_cm_agent ALTER COLUMN active SET DEFAULT 1;"
+
+        # update active in jos_cm_agent
+        mysql repqueuelog -su{{ mysql_username }} -p{{ mysql_password }} --default-character-set=utf8 -e "UPDATE jos_cm_agent SET active=1;"
+
+      else
+        echo "OK"
+      fi
+  register: modify_column_active_db
+  changed_when: modify_column_active_db.stdout != "OK"

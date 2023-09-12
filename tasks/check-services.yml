@@ -6,13 +6,14 @@
     - nginx
     - supervisord
     - ntpd
+    - docker
 
 - name: "Check supervisorctl ikono_suite running"
   supervisorctl:
     name: ikono_suite
     state: started
 
-- name: "Check supervisorctl cti-api running"
-  supervisorctl:
-    name: cti-api
-    state: started
+#- name: "Check supervisorctl cti-api running"
+#  supervisorctl:
+#    name: cti-api
+#    state: started

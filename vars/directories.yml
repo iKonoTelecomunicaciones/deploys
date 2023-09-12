@@ -1,0 +1,3 @@
+iKonoPath:
+  modules: /usr/local/src/ikono
+  docker: /opt

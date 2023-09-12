@@ -1,0 +1,66 @@
+- name: "Install git"
+  package:
+    name: git
+    state: present
+
+- name: "Install s3cmd"
+  pip:
+    name: s3cmd
+    #state: present
+
+- name: "State check directory ikono-suite-backup"
+  stat:
+    path: /opt/ikono-suite-backup
+  register: ikonoSuiteBackup
+
+- name: "Clone ikono-suite-backup proyect"
+  git:
+    repo: "https://{{ git_username | urlencode }}:{{ git_password | urlencode }}@gitlab.com/iKono/ikono-suite-backup.git"
+    dest: "/opt/ikono-suite-backup"
+    clone: yes
+    update: yes
+  when: not ikonoSuiteBackup.stat.exists
+
+- name: "Config git for ikono-suite-backup"
+  shell:
+    cmd: |
+      if [[ $( grep "{{ git_username }}:{{ git_password }}" /opt/ikono-suite-backup/.git/config ) ]]; then
+        sed -i "s/{{ git_username }}:{{ git_password }}@//g" /opt/ikono-suite-backup/.git/config
+      elif [[ $( grep {{ git_username }} /opt/ikono-suite-backup/.git/config ) ]]; then
+        sed -i "s/{{ git_username }}//g" /opt/ikono-suite-backup/.git/config
+      elif [[ $( grep {{ git_password }} /opt/ikono-suite-backup/.git/config ) ]]; then
+        sed -i "s/{{ git_password }}//g" /opt/ikono-suite-backup/.git/config
+      else
+        echo "OK"
+      fi
+  register: config_git_ikono_suite_backup
+  changed_when: config_git_ikono_suite_backup.stdout != "OK"
+
+- name: "Copy local settings ikono-suite-backup"
+  shell:
+    cmd: |
+      if [[ ! $( ls /opt/ikono-suite-backup/.env ) ]]; then
+        cp /opt/ikono-suite-backup/local_settings /opt/ikono-suite-backup/.env
+      else
+        echo "OK"
+      fi
+  register: copy_env_ikono_suite_backup
+  changed_when: copy_env_ikono_suite_backup.stdout != "OK"
+
+- name: " Script permissions"
+  file:
+    path: /opt/ikono-suite-backup/backup.sh
+    state: file
+    mode: a+x
+
+- name: "Config crontab"
+  shell:
+    cmd: |
+      if [[ ! $( grep "ikono-suite-backup" /var/spool/cron/root ) ]]; then
+        echo -e "\n## Backup for iKono Suite" | tee -a /var/spool/cron/root
+        echo "#00 02 * * * /opt/ikono-suite-backup/backup.sh /opt/ikono-suite-backup/.env &>> /var/log/ikono-suite-backup.log" | tee -a /var/spool/cron/root
+      else
+        echo "OK"
+      fi
+  register: cron_ikono_suite_backup
+  changed_when: cron_ikono_suite_backup.stdout != "OK"
